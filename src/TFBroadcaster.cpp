@@ -4,11 +4,48 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <vector>
 
 // Global Variables
-double rotation[4];
-double translation[3];
+std::vector<double> rotation;
+std::vector<double> translation;
+bool is_rotation_saved = false;
+bool is_translation_saved = false;
 
+// helper functions
+/**
+ * get the rotation values (roll, pitch, yaw) from the line
+ */
+void getRotation(std::string line) {
+  std::stringstream ss(line);
+  std::string part;
+  while(std::getline(ss, part, ',')) {
+    std::stringstream ss(part);
+    double value;
+    ss >> value;
+    rotation.push_back(value);
+  }
+  is_rotation_saved = true;
+}
+/**
+ * get the translation values (x, y, z) from the line
+ */
+void getTranslation(std::string line) {
+  std::stringstream ss(line);
+  std::string part;
+  while(std::getline(ss, part, ',')) {
+    std::stringstream ss(part);
+    double value;
+    ss >> value;
+    translation.push_back(value);
+  }
+  is_translation_saved = true;
+}
+
+/**
+ * Reads the file containing the calibration result and extracts the
+ * rotation and translation values.
+ */
 bool read_tf_from_file() {
   std::ifstream fin;
   fin.open("camera_calibration_result.txt");
@@ -16,76 +53,64 @@ bool read_tf_from_file() {
     std::cout << "could not find the file." << std::endl;
     return false;
   }
-  std::cout << "found the file" << std::endl;
-
   std::string line;
-
-  int counter = 0;
-
   while(std::getline(fin, line)) {
-    std::cout<< "reading line: " << line << std::endl;
     if(line.length() == 0) continue;
-    std::stringstream ss(line);
-    if(counter < 3)
-      ss >> rotation[counter];
-    else
-      ss >> translation[counter-3];
-    counter++;
+    if(line[0] == '#') continue;
+    if (!is_rotation_saved) {
+      getRotation(line);
+      continue;
+    }
+    if (!is_translation_saved) {
+      getTranslation(line);
+      continue;
+    }
   }
-
   return true;
 }
 
-// void tfCallback(const geometry_msgs::Transform& msg) {
-//   static tf::TransformBroadcaster br;
-//   tf::Transform transform;
-//   tf::Quaternion q(
-//                     msg.rotation.x,
-//                     msg.rotation.y,
-//                     msg.rotation.z,
-//                     msg.rotation.w);
-//   transform.setOrigin(
-//     tf::Vector3(msg.translation.x, msg.translation.y, msg.translation.z));
-//   transform.setRotation(q);
-//   br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "real_cam", "ideal_cam"));
-// }
-
 int main(int argc, char** argv) {
   ros::init(argc, argv, "cam_tf_broadcaster");
-
   ros::NodeHandle nh;
-  ros::Publisher cam_tf_pub_;
-  ros::Subscriber cam_tf_sub;
-
-  // cam_tf_pub_ = nh.advertise<geometry_msgs::Transform> ("cam_transformation",1);
-
   if(!read_tf_from_file())
     return 0;
-  geometry_msgs::Transform camTF_msg;
-  camTF_msg.translation.x = translation[0];
-  camTF_msg.translation.y = translation[1];
-  camTF_msg.translation.z = translation[2];
-  camTF_msg.rotation.x = rotation[0];
-  camTF_msg.rotation.y = rotation[1];
-  camTF_msg.rotation.z = rotation[2];
-  camTF_msg.rotation.w = 0;
 
-  // cam_tf_pub_.publish(camTF_msg);
-  // cam_tf_sub = nh.subscribe("cam_transformation", 10, &tfCallback);
+  std::cout << "rotation: " << std::endl;
+  std::cout << rotation[0] << std::endl;
+  std::cout << rotation[1] << std::endl;
+  std::cout << rotation[2] << std::endl;
+  std::cout << "translation: " << std::endl;
+  std::cout << translation[0] << std::endl;
+  std::cout << translation[1] << std::endl;
+  std::cout << translation[2] << std::endl;
 
-  static tf::TransformBroadcaster br;
+  tf::TransformBroadcaster br;
   tf::Transform transform;
-  tf::Quaternion q(
-                    rotation[0],
-                    rotation[1],
-                    rotation[2],
-                    0.0);
+  // Set the translation vector
   transform.setOrigin(
     tf::Vector3(translation[0], translation[1], translation[2]));
+  tf::Quaternion q;
+  // Set the quaternion using fixed axis RPY (roll, pitch, yaw)
+  q.setRPY(rotation[0], rotation[1], rotation[2]);
   transform.setRotation(q);
-  br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "real_cam", "ideal_cam"));
-
-  ros::spin();
-
+  // rate at which the transformation is published
+  ros::Rate rate(10.0);
+  while(nh.ok()) {
+    /**
+     *
+      tf::StampedTransform::StampedTransform	(	const tf::Transform & 	input,
+      const ros::Time & 	timestamp,
+      const std::string & 	parent_frame_id,
+      const std::string & 	child_frame_id
+      )
+     */
+    tf::StampedTransform stamped_tf(transform,
+                                    ros::Time::now(),
+                                    "ideal_cam",
+                                    "real_cam");
+    // publishing the transformation
+    br.sendTransform(stamped_tf);
+    rate.sleep();
+  }
   return 0;
 }

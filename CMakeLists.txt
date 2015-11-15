@@ -24,8 +24,8 @@ include_directories(
 
 # Declare the executable
 add_executable(tf_cam_broadcaster src/TFBroadcaster.cpp)
-add_executable(tf_cam_listener src/TFListener.cpp)
+add_executable(pointcloud_in_world src/PointCloudTransformer.cpp)
 
 # Specify libraries to link a lib or exec. target against
 target_link_libraries(tf_cam_broadcaster ${catkin_LIBRARIES})
-target_link_libraries(tf_cam_listener ${catkin_LIBRARIES})
+target_link_libraries(pointcloud_in_world ${catkin_LIBRARIES})

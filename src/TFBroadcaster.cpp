@@ -167,7 +167,7 @@ int main(int argc, char** argv) {
     tf::StampedTransform stamped_tf(A_c_w,
                                     ros::Time::now(),
                                     "camera",
-                                    "world");
+                                    "/Elem_0");
     // publishing the transformation
     br.sendTransform(stamped_tf);
     rate.sleep();

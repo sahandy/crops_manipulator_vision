@@ -124,6 +124,7 @@ int main(int argc, char** argv) {
   r_w_i.setRPY(2.0943951023931953, 0, -1.5707963267948966);
   tf::Vector3 t_w_i(0.27, 0, 1.574);
   t_w_i = r_w_i * t_w_i;
+  t_w_i = -t_w_i;
   tf::Transform A_w_i(r_w_i, t_w_i);
   /**
    * A_i_c
@@ -139,10 +140,6 @@ int main(int argc, char** argv) {
    * A_w_c
    */
   tf::Transform A_w_c = A_i_c * A_w_i;
-
-  tf::Vector3 t_w_c(A_w_c.getOrigin());
-  tf::Quaternion q2(A_w_c.getRotation());
-  tf::Matrix3x3 r_w_c(q2);
 
   std::cout << "Publishing the transformation..." << std::endl;
   std::cout << "A_w_c: " << std::endl;

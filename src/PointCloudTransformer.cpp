@@ -10,25 +10,26 @@
 // Global variables
 ros::Publisher pub;
 boost::shared_ptr<tf::TransformListener> listener_;
+std::string target_frame = "Elem_0";
 
 /**
  * Callback that receives the pointcloud message and transforms it to the world coordinate system
  */
 void cloud_cb_ (const sensor_msgs::PointCloud2ConstPtr& cloud_msg) {
-  boost::shared_ptr<sensor_msgs::PointCloud2> source_cloud;
-  sensor_msgs::PointCloud2Ptr transformed_cloud;
+
+  sensor_msgs::PointCloud2Ptr transformed_cloud (new sensor_msgs::PointCloud2());
   /*
-   * The TransformListener argument that is used in pcl_ros::transformPointCloud gets the parent frame_id from the
-   * input pointcloud (here: cloud_msg).
-   * To make the frame names consistent, frame_id of cloud_msg is renamed to the correct convention
+   * The TransformListener argument that is used in pcl_ros::transformPointCloud
+   * gets the parent frame_id from the input pointcloud (here: cloud_msg).
+   * To make the frame names consistent, frame_id of cloud_msg is renamed to
+   * the correct convention
    */
   // make a deep clone of cloud_msg
-  source_cloud = boost::make_shared<sensor_msgs::PointCloud2>(*cloud_msg);
+  boost::shared_ptr<sensor_msgs::PointCloud2> source_cloud(
+    new sensor_msgs::PointCloud2(*cloud_msg));
   // rename the frame_id
-  source_cloud->header.frame_id = "camera";
-  std::string target_frame = "Elem_0";
-  pcl_ros::transformPointCloud(target_frame, *source_cloud, *transformed_cloud, *listener_);
-
+  source_cloud->header.frame_id = "camera_rgb_optical_frame";
+  pcl_ros::transformPointCloud(target_frame, *cloud_msg, *transformed_cloud, *listener_);
   // publish the transformed pointcloud
   pub.publish(transformed_cloud);
 }

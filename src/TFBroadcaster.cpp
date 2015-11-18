@@ -7,13 +7,24 @@
 #include <vector>
 
 // Global Variables
-std::vector<double> r_i_c;
-std::vector<double> t_i_c;
-double r_w_i[3];
-double t_w_i[3];
+std::vector<double> r_i_c_from_file;
+std::vector<double> t_i_c_from_file;
 bool is_ric_saved = false;
 bool is_tic_saved = false;
 
+// helper functions
+/**
+ * convenience method to output an object of type tf::Matrix3x3
+ */
+std::ostream& operator<< (std::ostream &out, tf::Matrix3x3 &m) {
+  out << "  |  " << m[0].getX() << "\t" << m[0].getY() << "\t" << m[0].getZ() << "  |  " << std::endl
+      << "  |  " << m[1].getX() << "\t" << m[1].getY() << "\t" << m[1].getZ() << "  |  " << std::endl
+      << "  |  " << m[2].getX() << "\t" << m[2].getY() << "\t" << m[2].getZ() << "  |  " << std::endl;
+  return out;
+}
+/**
+ * convenience method to output an object of type tf::Transform
+ */
 std::ostream& operator<< (std::ostream &out, tf::Transform &transform) {
   double t[3];
   t[0] = transform.getOrigin().getX();
@@ -32,12 +43,12 @@ std::ostream& operator<< (std::ostream &out, tf::Transform &transform) {
       << "  Rotation:" << std::endl
       << "      roll  = " << r[0] << std::endl
       << "      pitch = " << r[1] << std::endl
-      << "      yaw   = " << r[2] << std::endl;
+      << "      yaw   = " << r[2] << std::endl
+      << "  Rotation Matrix:" << std::endl << rot_m << std::endl;
 
   return out;
 }
 
-// helper functions
 /**
  * get the rotation values (roll, pitch, yaw) from the line
  */
@@ -48,7 +59,7 @@ void getRotation(std::string line) {
     std::stringstream ss(part);
     double value;
     ss >> value;
-    r_i_c.push_back(value);
+    r_i_c_from_file.push_back(value);
   }
   is_ric_saved = true;
 }
@@ -62,7 +73,7 @@ void getTranslation(std::string line) {
     std::stringstream ss(part);
     double value;
     ss >> value;
-    t_i_c.push_back(value);
+    t_i_c_from_file.push_back(value);
   }
   is_tic_saved = true;
 }
@@ -73,7 +84,7 @@ void getTranslation(std::string line) {
  */
 bool read_tf_from_file() {
   std::ifstream fin;
-  fin.open("camera_calibration_result.txt");
+  fin.open("A_i_c.txt");
   if(!fin.is_open()) {
     std::cout << "could not find the file." << std::endl;
     return false;
@@ -98,63 +109,47 @@ int main(int argc, char** argv) {
   ros::init(argc, argv, "cam_tf_broadcaster");
   ros::NodeHandle nh;
   tf::TransformBroadcaster br;
+
   if(!read_tf_from_file())
     return 0;
 
   /**
    * A_w_i
    */
-  tf::Transform A_w_i;
-  A_w_i.setOrigin( tf::Vector3(0.27, 0, 1.574) );
-  tf::Quaternion q;
-  q.setRPY(-2.0943951023931953, 0, 1.5707963267948966);
-  A_w_i.setRotation(q);
-
+  tf::Matrix3x3 r_w_i;
+  // our original angle values:
+  // -2.0943951023931953, 0, 1.5707963267948966
+  // due to different convention of rotation matrices between AM and ros, we have
+  // to multiply the rotation angles by '-1'
+  r_w_i.setRPY(2.0943951023931953, 0, -1.5707963267948966);
+  tf::Vector3 t_w_i(0.27, 0, 1.574);
+  t_w_i = r_w_i * t_w_i;
+  tf::Transform A_w_i(r_w_i, t_w_i);
   /**
    * A_i_c
    */
-  tf::Transform A_i_c;
   // Set the translation vector
-  A_i_c.setOrigin(
-    tf::Vector3(t_i_c[0], t_i_c[1], t_i_c[2]));
-  // Set the quaternion using fixed axis RPY (roll, pitch, yaw)
-  q.setRPY(r_i_c[0], r_i_c[1], r_i_c[2]);
-  A_i_c.setRotation(q);
-
+  tf::Matrix3x3 r_i_c;
+  r_i_c.setRPY(-r_i_c_from_file[0], -r_i_c_from_file[1], -r_i_c_from_file[2]);
+  tf::Vector3 t_i_c(t_i_c_from_file[0], t_i_c_from_file[1], t_i_c_from_file[2]);
+  t_i_c = r_i_c * t_i_c;
+  t_i_c = -t_i_c;
+  tf::Transform A_i_c(r_i_c, t_i_c);
   /**
    * A_w_c
    */
   tf::Transform A_w_c = A_i_c * A_w_i;
 
   tf::Vector3 t_w_c(A_w_c.getOrigin());
-
   tf::Quaternion q2(A_w_c.getRotation());
   tf::Matrix3x3 r_w_c(q2);
 
-  /**
-   * reversing the transformation from the world to camera coordinate system
-   * to have what we actually want.
-   * r_c_w = transpose ( r_w_c )
-   * t_c_w = -r_c_w * t_w_c
-   */
-  // DO NOT GET CONFUSED!
-  // r_c_w --> rotation from camera to world
-  // r_w_c --> rotation from world to camera
-  // t_c_w --> translation from camera to world
-  // t_w_c --> translation from world to camera
-  tf::Matrix3x3 r_c_w(r_w_c.transpose());
-  tf::Vector3 t_c_w( r_c_w * t_w_c );
-  t_c_w = -t_c_w;
-  /**
-   * Last step: compose the transformation matrix
-   * A_c_w
-   * transformation from camera coordinate system to world coordinate system
-   */
-  tf::Transform A_c_w(r_c_w, t_c_w);
-  std::cout << "Broadcasting transformation /camera to /world" << std::endl;
-  std::cout << A_c_w << std::endl;
+  std::cout << "Publishing the transformation..." << std::endl;
+  std::cout << "A_w_c: " << std::endl;
+  std::cout << A_w_c << std::endl;
+
   // rate at which the transformation is published
-  ros::Rate rate(10.0);
+  ros::Rate rate(30.0); // in 'Hz'
   while(nh.ok()) {
     /**
      *
@@ -163,13 +158,16 @@ int main(int argc, char** argv) {
       const std::string & 	parent_frame_id,
       const std::string & 	child_frame_id
       )
+      the transformation would be from the child frame to the parent frame
+
      */
-    tf::StampedTransform stamped_tf(A_c_w,
+    tf::StampedTransform stamped_tf(A_w_c,
                                     ros::Time::now(),
-                                    "camera",
-                                    "/Elem_0");
+                                    "camera_rgb_optical_frame",
+                                    "Elem_0");
     // publishing the transformation
     br.sendTransform(stamped_tf);
+
     rate.sleep();
   }
   return 0;

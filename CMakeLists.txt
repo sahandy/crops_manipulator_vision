@@ -27,8 +27,10 @@ include_directories(
 add_executable(tf_cam_broadcaster src/TFBroadcaster.cpp)
 add_executable(transform_cloud_to_world src/PointCloudTransformer.cpp)
 add_executable(crop_workspace src/CropWorkspace.cpp)
+add_executable(segment src/Segmenter.cpp)
 
 # Specify libraries to link a lib or exec. target against
 target_link_libraries(tf_cam_broadcaster ${catkin_LIBRARIES})
 target_link_libraries(transform_cloud_to_world ${catkin_LIBRARIES})
 target_link_libraries(crop_workspace ${catkin_LIBRARIES})
+target_link_libraries(segment ${catkin_LIBRARIES})

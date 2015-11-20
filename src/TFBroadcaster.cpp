@@ -5,6 +5,9 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
 
 // Global Variables
 std::vector<double> r_i_c_from_file;
@@ -82,11 +85,12 @@ void getTranslation(std::string line) {
  * Reads the file containing the calibration result and extracts the
  * rotation and t_i_c values.
  */
-bool read_tf_from_file() {
+bool read_tf_from_file(const std::string& file_path) {
   std::ifstream fin;
-  fin.open("A_i_c.txt");
+
+  fin.open(file_path.c_str());
   if(!fin.is_open()) {
-    std::cout << "could not find the file." << std::endl;
+    ROS_FATAL("Error locating the calibration file. Shutting down the node...");
     return false;
   }
   std::string line;
@@ -106,11 +110,44 @@ bool read_tf_from_file() {
 }
 
 int main(int argc, char** argv) {
+
+  if(argc > 0) {
+    for (int i=0; i<argc; ++i) {
+      std::cout << argv[i] << std::endl;
+    }
+  }
+  // Initialize ros node
   ros::init(argc, argv, "cam_tf_broadcaster");
   ros::NodeHandle nh;
   tf::TransformBroadcaster br;
 
-  if(!read_tf_from_file())
+  std::string file_name;
+  // reading the parameter for calibration file name
+  nh.param<std::string>(
+    "/crops_manipulator_vision/calibration_file_name", file_name, "calib.txt");
+  std::cout << "reading param file_name: " << file_name << std::endl;
+
+  /**
+   * Find the calibration file in home directory
+   * path is hard-coded set to ~/.crops_manipulator/vision/
+   * file name is received via command line
+   */
+  // struct that helps finding the current home directory
+  struct passwd *pwd;
+  int id = 0;
+  if( (pwd = getpwuid(getuid())) == NULL ) {
+    ROS_FATAL("Error finding the home directory.");
+    return 0;
+  }
+  std::stringstream ss;
+  ss << pwd->pw_dir << "/.crops_manipulator/vision/";
+  std::cout << "Calibration file located at: " << ss.str() << std::endl;
+  std::string full_path;
+  full_path.append(ss.str());
+  full_path.append(file_name);
+  std::cout << "full path: " << full_path << std::endl;
+
+  if(!read_tf_from_file(full_path))
     return 0;
 
   /**

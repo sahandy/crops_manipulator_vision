@@ -1,83 +1,140 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
+int const MAX_HUE = 179;
+int const MAX_SAT = 255;
+int const MAX_VAL = 255;
+int const MAX_KERNEL_SIZE = 21;
+
 class HSVFilter {
 public:
+    HSVFilter();
     HSVFilter(cv::Mat &rgb);
 
     virtual ~HSVFilter() { }
 
-    void setColorValues(std::string);
-
+    void setImage(cv::Mat &rgb);
+    void setColorValues(std::string color);
+    void setColorValues(
+      int hmin, int hmax, int smin, int smax, int vmin, int vmax);
+    void setMorphKernels(int er_sz, int dl_sz);
+    void setMorphIters(int er_it, int dl_it);
     void morphOps(cv::Mat &threshold);
 
     cv::Mat getFilteredImage();
 
 private:
     cv::Mat rgb_;
-    int H_MIN_;
-    int H_MAX_;
-    int S_MIN_;
-    int S_MAX_;
-    int V_MIN_;
-    int V_MAX_;
+    int H_MIN_, H_MAX_;
+    int S_MIN_, S_MAX_;
+    int V_MIN_, V_MAX_;
+    int erosion_size_, dilation_size_;
+    int num_iter_erode_, num_iter_dilate_;
 
 };
+
+HSVFilter::HSVFilter()
+        : H_MIN_(0),
+          H_MAX_(MAX_HUE),
+          S_MIN_(0),
+          S_MAX_(MAX_SAT),
+          V_MIN_(0),
+          V_MAX_(MAX_VAL),
+          erosion_size_(1),
+          dilation_size_(3),
+          num_iter_erode_(1),
+          num_iter_dilate_(1) {}
 
 HSVFilter::HSVFilter(cv::Mat &rgb)
         : rgb_(rgb),
           H_MIN_(0),
-          H_MAX_(255),
+          H_MAX_(MAX_HUE),
           S_MIN_(0),
-          S_MAX_(255),
+          S_MAX_(MAX_SAT),
           V_MIN_(0),
-          V_MAX_(255) { }
+          V_MAX_(MAX_VAL),
+          erosion_size_(1),
+          dilation_size_(3),
+          num_iter_erode_(1),
+          num_iter_dilate_(1) { }
 
+void HSVFilter::setImage(cv::Mat &rgb) {
+  rgb_ = rgb;
+}
+
+// TODO refine HSV values
 void HSVFilter::setColorValues(std::string color) {
   if (color == "GREEN") {
     H_MIN_ = 57;
     H_MAX_ = 85;
 
     S_MIN_ = 50;
+    S_MAX_ = 100;
+
+    V_MIN_ = 0;
+    V_MAX_ = 100;
+  }
+  if (color == "RED") {
+    H_MIN_ = 0;
+    H_MAX_ = 20;
+
+    S_MIN_ = 210;
     S_MAX_ = 255;
 
     V_MIN_ = 0;
     V_MAX_ = 255;
   }
-  if (color == "RED") {
-    H_MIN = 0;
-    H_MAX = 20;
-
-    S_MIN = 210;
-    S_MAX = 255;
-
-    V_MIN = 0;
-    V_MAX = 255;
-  }
   if (color == "YELLOW") {
-    H_MIN = 20;
-    H_MAX = 35;
+    H_MIN_ = 25;
+    H_MAX_ = 33;
 
-    S_MIN = 135;
-    S_MAX = 255;
+    S_MIN_ = 135;
+    S_MAX_ = 255;
 
-    V_MIN = 0;
-    V_MAX = 255;
+    V_MIN_ = 230;
+    V_MAX_ = 255;
   }
 }
 
+void HSVFilter::setColorValues(
+  int hmin, int hmax, int smin, int smax, int vmin, int vmax) {
+    H_MIN_ = hmin; H_MAX_ = hmax;
+    S_MIN_ = smin; S_MAX_ = smax;
+    V_MIN_ = vmin; V_MAX_ = vmax;
+}
+
+void HSVFilter::setMorphKernels(int er_sz, int dl_sz) {
+  erosion_size_ = er_sz;
+  dilation_size_ = dl_sz;
+}
+
+void HSVFilter::setMorphIters(int er_it, int dl_it) {
+  num_iter_erode_ = er_it;
+  num_iter_dilate_ = dl_it;
+}
+
 void HSVFilter::morphOps(cv::Mat &thresh) {
-  // create structuring element that will be used to "dilate" and "erode" image.
-  // the element chosen here is a 3px by 3px rectangle
-  cv::Mat erodeElement = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
+  // create structuring elements that will be used to "dilate" and "erode" image.
+  cv::Mat erodeElement = cv::getStructuringElement(
+    cv::MORPH_RECT,
+    cv::Size(2*erosion_size_+1, 2*erosion_size_+1));
   // dilate with larger element so make sure object is nicely visible
-  cv::Mat dilateElement = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(8, 8));
+  cv::Mat dilateElement = cv::getStructuringElement(
+    cv::MORPH_RECT,
+    cv::Size(2*dilation_size_+1, 2*dilation_size_+1));
 
-  cv::erode(thresh, thresh, erodeElement);
-  cv::erode(thresh, thresh, erodeElement);
-
-  cv::dilate(thresh, thresh, dilateElement);
-  cv::dilate(thresh, thresh, dilateElement);
+  // first: erode and grow black region
+  cv::erode(thresh,
+            thresh,
+            erodeElement,
+            cv::Point(-1, -1),
+            num_iter_erode_);
+  // second: dilate and grow white region
+  cv::dilate(thresh,
+             thresh,
+             dilateElement,
+             cv::Point(-1,-1),
+             num_iter_dilate_);
 }
 
 /*

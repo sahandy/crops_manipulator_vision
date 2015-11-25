@@ -8,7 +8,9 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_conversions
   tf
   cmake_modules
-  sensor_msgs)
+  sensor_msgs
+  cv_bridge
+  image_transport)
 
 catkin_package()
 
@@ -25,10 +27,12 @@ include_directories(
 
 # Declare the executable
 add_executable(tf_cam_broadcaster src/TFBroadcaster.cpp)
-add_executable(color_filter_2d src/ColorFilter.cpp)
+add_executable(color_filter_2d src/ColorFilter2D.cpp)
 add_executable(transform_cloud_to_world src/PointCloudTransformer.cpp)
 add_executable(crop_workspace src/CropWorkspace.cpp)
 add_executable(segment src/Segmenter.cpp)
+add_executable(color_filter_3d src/ColorFilter3D.cpp)
+add_executable(align src/AlignFruit.cpp)
 
 # Specify libraries to link a lib or exec. target against
 target_link_libraries(tf_cam_broadcaster ${catkin_LIBRARIES})
@@ -36,3 +40,5 @@ target_link_libraries(color_filter_2d ${catkin_LIBRARIES})
 target_link_libraries(transform_cloud_to_world ${catkin_LIBRARIES})
 target_link_libraries(crop_workspace ${catkin_LIBRARIES})
 target_link_libraries(segment ${catkin_LIBRARIES})
+target_link_libraries(color_filter_3d ${catkin_LIBRARIES})
+target_link_libraries(align ${catkin_LIBRARIES})

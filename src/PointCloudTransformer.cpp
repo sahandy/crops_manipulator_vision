@@ -44,14 +44,22 @@ void cloud_cb_ (const PointCloudConstPtr& cloud_msg) {
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "cam_tf_listener");
-
+  std::cout << "node: cam_tf_listener" << std::endl;
   ros::NodeHandle node;
 
+  std::string in_cloud_topic;
+  if(argc > 1)
+    in_cloud_topic = argv[1];
+  else
+    in_cloud_topic = "/crops/vision/pointcloud_color_filtered";
+
+
+  std::cout << "subscribing to topic: " << in_cloud_topic << std::endl;
   listener_.reset(new tf::TransformListener);
   // Create a ROS subscriber for the input point cloud
-  ros::Subscriber sub = node.subscribe ("/camera/depth_registered/points", 1, cloud_cb_);
+  ros::Subscriber sub = node.subscribe("/crops/vision/pointcloud_color_filtered", 1, cloud_cb_);
   // Create a ROS publisher for the output point cloud
-  pub = node.advertise<PointCloudT> ("crops/vision/pointcloud_wcs", 1);
+  pub = node.advertise<PointCloudT>("crops/vision/pointcloud_wcs", 1);
   // Spin
   ros::spin();
 

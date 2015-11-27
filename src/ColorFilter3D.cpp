@@ -11,23 +11,19 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
-// Helper typedefs to make the implementation code cleaner
-typedef pcl::PointXYZRGB PointT;
-typedef pcl::PointCloud<PointT> PointCloudT;
-typedef typename PointCloudT::Ptr PointCloudPtr;
-typedef typename PointCloudT::ConstPtr PointCloudConstPtr;
+#include "types.h"
 
 ros::Publisher pub;
 image_transport::Subscriber image_sub_;
 
-PointCloudPtr cloud;
+PointCloudCTPtr cloud;
 cv::Mat threshold;
 
 bool im, cb;
 
 // Forward decleration
 void ignite();
-void cloud_cb_ (const PointCloudConstPtr& cloud_msg);
+void cloud_cb_ (const PointCloudCTConstPtr& cloud_msg);
 void image_cb_ (const sensor_msgs::ImageConstPtr& msg);
 
 int main (int argc, char** argv) {
@@ -50,16 +46,15 @@ int main (int argc, char** argv) {
   // Create a ROS subscriber for the input color filtered image
   image_sub_ = it_.subscribe("crops/vision/image_filter/hsv_filtered", 1, image_cb_);
   // Create a ROS publisher for the output model coefficients
-  pub = nh_.advertise<PointCloudT> ("/crops/vision/pointcloud_color_filtered", 1);
-
+  pub = nh_.advertise<PointCloudCT> ("/crops/vision/pointcloud_color_filtered", 1);
   // Spin
   ros::spin ();
 
   return 0;
 }
 
-void cloud_cb_ (const PointCloudConstPtr& cloud_msg) {
-  cloud.reset(new PointCloudT);
+void cloud_cb_ (const PointCloudCTConstPtr& cloud_msg) {
+  cloud.reset(new PointCloudCT);
   pcl::copyPointCloud(*cloud_msg, *cloud);
   cb = true;
   ignite();

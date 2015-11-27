@@ -3,12 +3,10 @@
 
 #include <Eigen/Core>
 
-#include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl/common/time.h>
 #include <pcl/console/print.h>
 #include <pcl/features/normal_3d_omp.h>
-#include <pcl/features/fpfh_omp.h>
 #include <pcl/filters/filter.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/io/pcd_io.h>
@@ -20,18 +18,7 @@
 #include <sys/types.h>
 #include <pwd.h>
 
-// Helper typedefs to make the implementation code cleaner
-typedef pcl::PointXYZ PointT;
-typedef pcl::PointCloud<PointT> PointCloudT;
-typedef typename PointCloudT::Ptr PointCloudPtr;
-typedef typename PointCloudT::ConstPtr PointCloudConstPtr;
-
-typedef pcl::PointNormal PointNT;
-typedef pcl::PointCloud<PointNT> PointCloudNT;
-typedef pcl::FPFHSignature33 FeatureT;
-typedef pcl::FPFHEstimationOMP<PointNT,PointNT,FeatureT> FeatureEstimationT;
-typedef pcl::PointCloud<FeatureT> FeatureCloudT;
-
+#include "types.h"
 
 ros::Publisher pub;
 ros::Publisher model_pub;
@@ -46,7 +33,7 @@ const float leaf_size = 0.005f;
 
 // forward decleration
 void load_model(std::string file_path);
-void cloud_cb_ (const PointCloudConstPtr& cloud_msg);
+void cloud_cb_ (const PointCloudTConstPtr& cloud_msg);
 
 int main(int argc, char** argv) {
   ros::init (argc, argv, "align_fruit");
@@ -61,7 +48,7 @@ int main(int argc, char** argv) {
   std::cout << "subscribing to topic: " << in_cloud_topic << std::endl;
   ros::Subscriber sub =
     nh_.subscribe (in_cloud_topic, 1, cloud_cb_);
-  pub = nh_.advertise<PointCloudNT> ("/crops/vision/aligned_cloud", 1);
+  pub = nh_.advertise<PointCloudT> ("/crops/vision/aligned_cloud", 1);
   model_pub = nh_.advertise<PointCloudNT> ("/crops/vision/model", 1);
   // load the sweet paprika model
   // struct that helps finding the current home directory
@@ -93,8 +80,8 @@ int main(int argc, char** argv) {
 }
 
 void load_model(std::string file_path) {
-  PointCloudPtr cloud (new PointCloudT);
-  PointCloudPtr cloud_filtered (new PointCloudT);
+  PointCloudTPtr cloud (new PointCloudT);
+  PointCloudTPtr cloud_filtered (new PointCloudT);
   if (pcl::io::loadPCDFile<PointT>(file_path, *cloud) == -1) {
     PCL_ERROR("Could not find the file\n");
   }
@@ -109,11 +96,11 @@ void load_model(std::string file_path) {
 
   std::cout << "Model size: " << model->points.size() << std::endl;
 }
-void cloud_cb_ (const PointCloudConstPtr& cloud_msg) {
+void cloud_cb_ (const PointCloudTConstPtr& cloud_msg) {
   // DEBUG: Publish model
   pub.publish(*model);
 
-  PointCloudPtr cloud_filtered (new PointCloudT);
+  PointCloudTPtr cloud_filtered (new PointCloudT);
   // voxelize model
   pcl::VoxelGrid<PointT> vg;
   vg.setInputCloud(cloud_msg);
@@ -169,11 +156,11 @@ void cloud_cb_ (const PointCloudConstPtr& cloud_msg) {
     pcl::console::print_info ("Inliers: %i/%i\n", align.getInliers ().size (), model->size ());
 
     // Show alignment
-    PointCloudPtr output (new PointCloudT);
+    PointCloudTPtr output (new PointCloudT);
     pcl::transformPointCloud(*model, *model, transformation);
     pcl::copyPointCloud(*model, *output);
     pub.publish(*output);
-    ros::Duration(1.0).sleep();
+    // ros::Duration(1.0).sleep();
   }
   else
   {

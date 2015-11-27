@@ -9,19 +9,14 @@
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/segmentation/sac_segmentation.h>
 
-
-// Helper typedefs to make the implementation code cleaner
-typedef pcl::PointXYZ PointT;
-typedef pcl::PointCloud<PointT> PointCloudT;
-typedef typename PointCloudT::Ptr PointCloudPtr;
-typedef typename PointCloudT::ConstPtr PointCloudConstPtr;
+#include "types.h"
 
 // Global variables and constants
 ros::Publisher pub;
 double const min_filter_percentage_ = 0.1;
 
 // forward decleration
-void cloud_cb_ (const PointCloudConstPtr& cloud_msg);
+void cloud_cb_ (const PointCloudTConstPtr& cloud_msg);
 
 int main (int argc, char** argv) {
   // Initialize ROS
@@ -40,8 +35,8 @@ int main (int argc, char** argv) {
 /**
  * Callback method to receive a pointcloud from the given ros topic
  */
-void cloud_cb_ (const PointCloudConstPtr& cloud_msg) {
-  PointCloudPtr segments (new PointCloudT);
+void cloud_cb_ (const PointCloudTConstPtr& cloud_msg) {
+  PointCloudTPtr segments (new PointCloudT);
   pcl::copyPointCloud(*cloud_msg, *segments);
   /*
    * Extract Planar surfaces
@@ -52,7 +47,7 @@ void cloud_cb_ (const PointCloudConstPtr& cloud_msg) {
   // plane
   pcl::ExtractIndices<PointT>  extract;
   // Create the segmentation object
-  pcl::SACSegmentation<pcl::PointXYZ> seg;
+  pcl::SACSegmentation<PointT> seg;
   // Optional parameter for optimization
   seg.setOptimizeCoefficients (true);
   // Mandatory parameters required by segmentation algorithm

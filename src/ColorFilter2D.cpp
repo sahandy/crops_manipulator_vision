@@ -83,6 +83,8 @@ int main (int argc, char **argv) {
   cv::createTrackbar("Erosion Iterations", "HSV Range Controller", &er_it_, 5, on_trackbar);
   cv::createTrackbar("Dilation Kernel\nSize: 2n+1", "HSV Range Controller", &dl_sz_, 21, on_trackbar);
   cv::createTrackbar("Dilation Iterations", "HSV Range Controller", &dl_it_, 5, on_trackbar);
+  // Initialize trackbars
+  on_trackbar(0, 0);
   // Spin
   ros::spin ();
 

@@ -19,8 +19,14 @@ int main (int argc, char** argv) {
   // Initialize ROS
   ros::init (argc, argv, "crop_workspace");
   ros::NodeHandle nh;
+  // reading subscriber topic from cmd (if available)
+  std::string in_cloud_topic;
+  if(argc > 1)
+    in_cloud_topic = argv[1];
+  else
+    in_cloud_topic = "crops/vision/pointcloud_wcs"; // default
   // Create a ROS subscriber for the input point cloud
-  ros::Subscriber sub = nh.subscribe ("crops/vision/pointcloud_wcs", 1, cloud_cb_);
+  ros::Subscriber sub = nh.subscribe (in_cloud_topic, 1, cloud_cb_);
   // Create a ROS publisher for the output model coefficients
   pub = nh.advertise<PointCloudT> ("crops/vision/pointcloud_workspace", 1);
   // Spin

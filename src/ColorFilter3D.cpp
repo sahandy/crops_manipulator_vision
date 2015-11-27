@@ -38,10 +38,15 @@ int main (int argc, char** argv) {
   ros::NodeHandle nh_;
 
   image_transport::ImageTransport it_(nh_);
-
+  // reading subscriber topic from cmd (if available)
+  std::string in_cloud_topic;
+  if(argc > 1)
+    in_cloud_topic = argv[1];
+  else
+    in_cloud_topic = "/camera/depth_registered/points";
   // Create a ROS subscriber for the input point cloud
   ros::Subscriber sub =
-    nh_.subscribe ("/camera/depth_registered/points", 1, cloud_cb_);
+    nh_.subscribe (in_cloud_topic, 1, cloud_cb_);
   // Create a ROS subscriber for the input color filtered image
   image_sub_ = it_.subscribe("crops/vision/image_filter/hsv_filtered", 1, image_cb_);
   // Create a ROS publisher for the output model coefficients

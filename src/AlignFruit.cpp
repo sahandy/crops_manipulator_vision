@@ -51,9 +51,16 @@ void cloud_cb_ (const PointCloudConstPtr& cloud_msg);
 int main(int argc, char** argv) {
   ros::init (argc, argv, "align_fruit");
   ros::NodeHandle nh_;
+  // reading subscriber topic from cmd (if available)
+  std::string in_cloud_topic;
+  if(argc > 1)
+    in_cloud_topic = argv[1];
+  else
+    in_cloud_topic = "crops/vision/pointcloud_workspace";
 
+  std::cout << "subscribing to topic: " << in_cloud_topic << std::endl;
   ros::Subscriber sub =
-    nh_.subscribe ("/crops/vision/pointcloud_color_filtered", 1, cloud_cb_);
+    nh_.subscribe (in_cloud_topic, 1, cloud_cb_);
   pub = nh_.advertise<PointCloudNT> ("/crops/vision/aligned_cloud", 1);
   model_pub = nh_.advertise<PointCloudNT> ("/crops/vision/model", 1);
   // load the sweet paprika model

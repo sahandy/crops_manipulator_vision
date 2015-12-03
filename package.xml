@@ -1,10 +1,11 @@
-<package>
+<package format="2">
   <name>crops_manipulator_vision</name>
   <version>0.1.0</version>
-  <description>Vision sub-module to paprikas</description>
+  <description>Vision sub-module to detect paprikas</description>
   <maintainer email="sahand.yousefpour@tum.de">Sahand Yousefpour</maintainer>
   <maintainer email="test@test.com">C. Schuetz</maintainer>
   <maintainer email="test@test.com">TUM</maintainer>
+  <author>Sahand Yousefpour</author>
 
   <license>BSD</license>
 
@@ -15,22 +16,28 @@
 
   <!-- Dependencies needed to compile this package. -->
   <build_depend>cmake_modules</build_depend>
+  <build_depend>crops_manipulator_gui</build_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>pcl_conversions</build_depend>
   <build_depend>pcl_ros</build_depend>
   <build_depend>sensor_msgs</build_depend>
   <build_depend>libpcl-all-dev</build_depend>
   <build_depend>cv_bridge</build_depend>
+  <build_depend>tf</build_depend>
   <build_depend>image_transport</build_depend>
 
+  <build_export_depend>crops_manipulator_gui</build_export_depend>
 
   <!-- Dependencies needed after this package is compiled. -->
-  <run_depend>cmake_modules</run_depend>
-  <run_depend>roscpp</run_depend>
-  <run_depend>std_msgs</run_depend>
-  <run_depend>pcl_conversions</run_depend>
-  <run_depend>pcl_ros</run_depend>
-  <run_depend>sensor_msgs</run_depend>
-  <run_depend>libpcl-all</run_depend>
-
+  <exec_depend>cmake_modules</exec_depend>
+  <exec_depend>crops_manipulator_gui</exec_depend>
+  <exec_depend>roscpp</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>pcl_conversions</exec_depend>
+  <exec_depend>pcl_ros</exec_depend>
+  <exec_depend>cv_bridge</exec_depend>
+  <exec_depend>image_transport</exec_depend>
+  <exec_depend>tf</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>libpcl-all</exec_depend>
 </package>

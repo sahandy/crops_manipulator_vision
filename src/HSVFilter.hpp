@@ -1,10 +1,22 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
+namespace crops_vision {
+  enum Color {
+    RED = 0,
+    GREEN,
+    BLUE,
+    YELLOW,
+    YELLOW_RED,
+    MAGENTA_RED,
+  };
+}
+
 int const MAX_HUE = 179;
 int const MAX_SAT = 255;
 int const MAX_VAL = 255;
 int const MAX_KERNEL_SIZE = 21;
+
 
 class HSVFilter {
 public:
@@ -14,14 +26,15 @@ public:
     virtual ~HSVFilter() { }
 
     void setImage(cv::Mat &rgb);
-    void setColorValues(std::string color);
-    void setColorValues(
+    void setHsvValues(crops_vision::Color color);
+    void setHsvValues(
       int hmin, int hmax, int smin, int smax, int vmin, int vmax);
     void setMorphKernels(int er_sz, int dl_sz);
     void setMorphIters(int er_it, int dl_it);
     void morphOps(cv::Mat &threshold);
 
-    cv::Mat getFilteredImage();
+    cv::Mat getFiltered();
+    cv::Mat getFilteredImage(crops_vision::Color color);
 
 private:
     cv::Mat rgb_;
@@ -62,41 +75,53 @@ void HSVFilter::setImage(cv::Mat &rgb) {
   rgb_ = rgb;
 }
 
-// TODO refine HSV values
-void HSVFilter::setColorValues(std::string color) {
-  if (color == "GREEN") {
-    H_MIN_ = 57;
-    H_MAX_ = 85;
 
-    S_MIN_ = 50;
-    S_MAX_ = 100;
+void HSVFilter::setHsvValues(crops_vision::Color color) {
+  switch (color) {
+    case crops_vision::YELLOW_RED :
+      H_MIN_ = 0;
+      H_MAX_ = 10;
 
-    V_MIN_ = 0;
-    V_MAX_ = 100;
-  }
-  if (color == "RED") {
-    H_MIN_ = 0;
-    H_MAX_ = 20;
+      S_MIN_ = 180;
+      S_MAX_ = 255;
 
-    S_MIN_ = 210;
-    S_MAX_ = 255;
+      V_MIN_ = 190;
+      V_MAX_ = 255;
+      break;
+    case crops_vision::MAGENTA_RED :
+      H_MIN_ = 165;
+      H_MAX_ = 179;
 
-    V_MIN_ = 0;
-    V_MAX_ = 255;
-  }
-  if (color == "YELLOW") {
-    H_MIN_ = 25;
-    H_MAX_ = 33;
+      S_MIN_ = 190;
+      S_MAX_ = 255;
 
-    S_MIN_ = 135;
-    S_MAX_ = 255;
+      V_MIN_ = 170;
+      V_MAX_ = 255;
+      break;
+    case crops_vision::YELLOW :
+      H_MIN_ = 12;
+      H_MAX_ = 22;
 
-    V_MIN_ = 230;
-    V_MAX_ = 255;
+      S_MIN_ = 130;
+      S_MAX_ = 255;
+
+      V_MIN_ = 140;
+      V_MAX_ = 255;
+      break;
+    case crops_vision::GREEN :
+      H_MIN_ = 40;
+      H_MAX_ = 70;
+
+      S_MIN_ = 140;
+      S_MAX_ = 255;
+
+      V_MIN_ = 120;
+      V_MAX_ = 255;
+      break;
   }
 }
 
-void HSVFilter::setColorValues(
+void HSVFilter::setHsvValues(
   int hmin, int hmax, int smin, int smax, int vmin, int vmax) {
     H_MIN_ = hmin; H_MAX_ = hmax;
     S_MIN_ = smin; S_MAX_ = smax;
@@ -141,13 +166,38 @@ void HSVFilter::morphOps(cv::Mat &thresh) {
  * Return a filtered image based on predefined HSV values as threshold.
  * The threshold values are provided by ImageFilter::setHsvValues(...)
  */
-cv::Mat HSVFilter::getFilteredImage() {
+cv::Mat HSVFilter::getFiltered() {
   cv::Mat HSV, threshold;
   // Change the color format from BGR to HSV
   cv::cvtColor(rgb_, HSV, CV_BGR2HSV);
-
   // Filter HSV image between values and store filtered image to threshold matrix
   cv::inRange(HSV, cv::Scalar(H_MIN_, S_MIN_, V_MIN_), cv::Scalar(H_MAX_, S_MAX_, V_MAX_), threshold);
 
   return threshold;
+}
+
+cv::Mat HSVFilter::getFilteredImage(crops_vision::Color color) {
+  // TODO (for intervals higher than 180 degrees) check if H_MIN > H_MAX, then
+  // create two intervals
+
+  // HSV- is cylindrical coordinate system. That's why red has different cut-off.
+  // the 'extra' is for when we want to threshold the RED color.
+  cv::Mat threshold, extra;
+  switch (color) {
+    case crops_vision::RED :
+      setHsvValues(crops_vision::YELLOW_RED);
+      threshold = getFiltered();
+      setHsvValues(crops_vision::MAGENTA_RED);
+      extra = getFiltered();
+      return threshold + extra;
+      break;
+    case crops_vision::YELLOW :
+      setHsvValues(color);
+      return getFiltered();
+      break;
+    case crops_vision::GREEN :
+      setHsvValues(color);
+      return getFiltered();
+      break;
+  }
 }

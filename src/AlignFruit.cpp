@@ -63,12 +63,11 @@ int main(int argc, char** argv) {
   std::cout << "Model located at: " << ss.str() << std::endl;
 
   std::string full_path;
-  std::string file_name = "paprika_01.pcd";
+  std::string file_name = "paprika_centered.pcd";
   full_path.append(ss.str());
   full_path.append(file_name);
 
   load_model(full_path);
-  //pcl::compute3DCentroid
 
   // while(true) {
   //   pub.publish(*cloud);

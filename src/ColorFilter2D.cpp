@@ -5,7 +5,7 @@
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
-#include <std_msgs/Int32.h>
+#include <std_msgs/Bool.h>
 #include <std_msgs/MultiArrayLayout.h>
 #include <std_msgs/MultiArrayDimension.h>
 #include <std_msgs/Int32MultiArray.h>
@@ -33,7 +33,7 @@ HSVFilter hsv_filter_;
 
 // callbacks
 void image_cb_(const sensor_msgs::ImageConstPtr& msg);
-void set_interactive_(const std_msgs::Int32::ConstPtr& msg);
+void set_interactive_(const std_msgs::Bool::ConstPtr& msg);
 void set_hsv_values_(const std_msgs::Int32MultiArray::ConstPtr& msg);
 
 
@@ -58,14 +58,10 @@ int main (int argc, char **argv) {
 /**
  * Callback that receives the message to toggle HSV interactive mode
 */
-void set_interactive_(const std_msgs::Int32::ConstPtr& msg) {
-  int state = msg->data;
-  interactive_ = (state != 0);
+void set_interactive_(const std_msgs::Bool::ConstPtr& msg) {
+  bool state = msg->data;
+  interactive_ = state;
   std::cout << "interactive mode: " << interactive_ << std::endl;
-  // if(interactive_)
-  //   create_control_panel();
-  // else
-  //   destroy_control_panel();
 }
 
 /**

@@ -1,5 +1,6 @@
 #include <ros/ros.h>
 #include <pcl_ros/point_cloud.h>
+#include <geometry_msgs/Vector3.h>
 
 #include <Eigen/Core>
 
@@ -22,6 +23,7 @@
 
 ros::Publisher pub;
 ros::Publisher model_pub;
+ros::Publisher fruit_center_pub;
 ros::Subscriber sub;
 
 PointCloudNT::Ptr model (new PointCloudNT);
@@ -50,6 +52,8 @@ int main(int argc, char** argv) {
     nh_.subscribe (in_cloud_topic, 1, cloud_cb_);
   pub = nh_.advertise<PointCloudT> ("/crops/vision/aligned_cloud", 1);
   model_pub = nh_.advertise<PointCloudNT> ("/crops/vision/model", 1);
+  fruit_center_pub =
+    nh_.advertise<geometry_msgs::Vector3> ("/crops/vision/result/fruit_center", 1);
   // load the sweet paprika model
   // struct that helps finding the current home directory
   struct passwd *pwd;
@@ -154,6 +158,18 @@ void cloud_cb_ (const PointCloudTConstPtr& cloud_msg) {
     pcl::console::print_info ("\n");
     pcl::console::print_info ("Inliers: %i/%i\n", align.getInliers ().size (), model->size ());
 
+    geometry_msgs::Vector3 msg;
+    float x, y, z, temp;
+    temp = transformation(0, 3) * 100.0f;
+    x = ((int)temp) / 100.0f;
+    temp = transformation(1, 3) * 100.0f;
+    y = ((int)temp) / 100.0f;
+    temp = transformation(2, 3) * 100.0f;
+    z = ((int)temp) / 100.0f;
+    msg.x = x;
+    msg.y = y;
+    msg.z = z;
+    fruit_center_pub.publish(msg);
     // Show alignment
     PointCloudTPtr output (new PointCloudT);
     pcl::transformPointCloud(*model, *model, transformation);

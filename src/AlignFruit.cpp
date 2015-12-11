@@ -100,9 +100,6 @@ void load_model(std::string file_path) {
   std::cout << "Model size: " << model->points.size() << std::endl;
 }
 void cloud_cb_ (const PointCloudTConstPtr& cloud_msg) {
-  // DEBUG: Publish model
-  pub.publish(*model);
-
   PointCloudTPtr cloud_filtered (new PointCloudT);
   // voxelize model
   pcl::VoxelGrid<PointT> vg;
@@ -171,10 +168,7 @@ void cloud_cb_ (const PointCloudTConstPtr& cloud_msg) {
     msg.z = z;
     fruit_center_pub.publish(msg);
     // Show alignment
-    PointCloudTPtr output (new PointCloudT);
-    pcl::transformPointCloud(*model, *model, transformation);
-    pcl::copyPointCloud(*model, *output);
-    pub.publish(*output);
+    pub.publish(*model_aligned);
     // ros::Duration(1.0).sleep();
   }
   else

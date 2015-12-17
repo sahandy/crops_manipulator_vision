@@ -19,12 +19,19 @@
 #include <sys/types.h>
 #include <pwd.h>
 
+#include <std_msgs/Bool.h>
+#include <std_msgs/Int32.h>
+
 #include "types.h"
 
-ros::Publisher pub;
+// Global variables
+boost::shared_ptr<ros::NodeHandle> nh_;
+ros::Publisher result_pub_;
 ros::Publisher model_pub;
 ros::Publisher fruit_center_pub;
-ros::Subscriber sub;
+ros::Subscriber cloud_sub_;
+ros::Subscriber state_sub_;
+std::string in_cloud_topic_;
 
 PointCloudNT::Ptr model (new PointCloudNT);
 PointCloudNT::Ptr model_aligned (new PointCloudNT);
@@ -35,25 +42,24 @@ const float leaf_size = 0.005f;
 
 // forward decleration
 void load_model(std::string file_path);
-void cloud_cb_ (const PointCloudTConstPtr& cloud_msg);
+void state_cb_(const std_msgs::Bool::ConstPtr& state_msg);
+void cloud_cb_(const PointCloudTConstPtr& cloud_msg);
 
 int main(int argc, char** argv) {
   ros::init (argc, argv, "align_fruit");
-  ros::NodeHandle nh_;
+  nh_.reset(new ros::NodeHandle);
   // reading subscriber topic from cmd (if available)
-  std::string in_cloud_topic;
   if(argc > 1)
-    in_cloud_topic = argv[1];
+    in_cloud_topic_ = argv[1];
   else
-    in_cloud_topic = "crops/vision/pointcloud_workspace";
+    in_cloud_topic_ = "crops/vision/pointcloud_workspace";
 
-  std::cout << "subscribing to topic: " << in_cloud_topic << std::endl;
-  ros::Subscriber sub =
-    nh_.subscribe (in_cloud_topic, 1, cloud_cb_);
-  pub = nh_.advertise<PointCloudT> ("/crops/vision/aligned_cloud", 1);
-  model_pub = nh_.advertise<PointCloudNT> ("/crops/vision/model", 1);
+  state_sub_ = nh_->subscribe("/crops/vision/alignment/state", 1, state_cb_);
+
+  result_pub_ = nh_->advertise<PointCloudT> ("/crops/vision/aligned_cloud", 1);
+  model_pub = nh_->advertise<PointCloudNT> ("/crops/vision/model", 1);
   fruit_center_pub =
-    nh_.advertise<geometry_msgs::Vector3> ("/crops/vision/result/fruit_center", 1);
+    nh_->advertise<geometry_msgs::Vector3> ("/crops/vision/result/fruit_center", 1);
   // load the sweet paprika model
   // struct that helps finding the current home directory
   struct passwd *pwd;
@@ -99,6 +105,15 @@ void load_model(std::string file_path) {
 
   std::cout << "Model size: " << model->points.size() << std::endl;
 }
+
+void state_cb_(const std_msgs::Bool::ConstPtr& state_msg) {
+  const bool active = state_msg->data;
+  if(active)
+    cloud_sub_ = nh_->subscribe(in_cloud_topic_, 1, cloud_cb_);
+  else
+    cloud_sub_.shutdown();
+}
+
 void cloud_cb_ (const PointCloudTConstPtr& cloud_msg) {
   PointCloudTPtr cloud_filtered (new PointCloudT);
   // voxelize model
@@ -168,7 +183,7 @@ void cloud_cb_ (const PointCloudTConstPtr& cloud_msg) {
     msg.z = z;
     fruit_center_pub.publish(msg);
     // Show alignment
-    pub.publish(*model_aligned);
+    result_pub_.publish(*model_aligned);
     // ros::Duration(1.0).sleep();
   }
   else

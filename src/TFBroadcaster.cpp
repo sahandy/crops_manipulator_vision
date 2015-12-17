@@ -25,30 +25,23 @@ std::ostream& operator<< (std::ostream &out, tf::Matrix3x3 &m) {
       << "  |  " << m[2].getX() << "\t" << m[2].getY() << "\t" << m[2].getZ() << "  |  " << std::endl;
   return out;
 }
+
+std::ostream& operator<< (std::ostream &out, tf::Vector3 &v) {
+  out << "< " << v.getX()
+      << ", " << v.getY()
+      << ", " << v.getZ() << " >";
+  return out;
+}
 /**
  * convenience method to output an object of type tf::Transform
  */
 std::ostream& operator<< (std::ostream &out, tf::Transform &transform) {
-  double t[3];
-  t[0] = transform.getOrigin().getX();
-  t[1] = transform.getOrigin().getY();
-  t[2] = transform.getOrigin().getZ();
-
-  double r[3];
+  // double r[3];
   tf::Quaternion q(transform.getRotation());
   tf::Matrix3x3 rot_m(q);
-  rot_m.getRPY(r[0], r[1], r[2]);
-
-  out << "  Translation:" << std::endl
-      << "      X = " << t[0] << std::endl
-      << "      Y = " << t[1] << std::endl
-      << "      Z = " << t[2] << std::endl
-      << "  Rotation:" << std::endl
-      << "      roll  = " << r[0] << std::endl
-      << "      pitch = " << r[1] << std::endl
-      << "      yaw   = " << r[2] << std::endl
-      << "  Rotation Matrix:" << std::endl << rot_m << std::endl;
-
+  // rot_m.getRPY(r[0], r[1], r[2]);
+  out << "Rotation:\n" << rot_m << std::endl;
+  out << "Translation:\n" << transform.getOrigin();
   return out;
 }
 
@@ -159,27 +152,37 @@ int main(int argc, char** argv) {
   // due to different convention of rotation matrices between AM and ros, we have
   // to multiply the rotation angles by '-1'
   r_w_i.setRPY(2.0943951023931953, 0, -1.5707963267948966);
+  std::cout << "\n\nr_w_i: \n" << r_w_i << std::endl;
   tf::Vector3 t_w_i(0.27, 0, 1.574);
+  std::cout << "t_w_i (initial): \n\t" << t_w_i << std::endl;
   t_w_i = r_w_i * t_w_i;
+  std::cout << "r_w_i * t_w_i: \n\t" << t_w_i << std::endl;
   t_w_i = -t_w_i;
+  std::cout << "-t_w_i: \n\t" << t_w_i << std::endl;
   tf::Transform A_w_i(r_w_i, t_w_i);
+  std::cout << "A_w_i: \n\t" << A_w_i << std::endl;
   /**
    * A_i_c
    */
   // Set the translation vector
   tf::Matrix3x3 r_i_c;
   r_i_c.setRPY(-r_i_c_from_file[0], -r_i_c_from_file[1], -r_i_c_from_file[2]);
+  std::cout << "\n\nr_i_c: \n" << r_i_c << std::endl;
   tf::Vector3 t_i_c(t_i_c_from_file[0], t_i_c_from_file[1], t_i_c_from_file[2]);
+  std::cout << "t_i_c (initial): \n" << t_i_c << std::endl;
   t_i_c = r_i_c * t_i_c;
+  std::cout << "r_i_c * t_i_c: \n" << t_i_c << std::endl;
   t_i_c = -t_i_c;
+  std::cout << "-t_i_c: \n" << t_i_c << std::endl;
   tf::Transform A_i_c(r_i_c, t_i_c);
+  std::cout << "A_i_c:\n" << A_i_c << std::endl;
   /**
    * A_w_c
    */
   tf::Transform A_w_c = A_i_c * A_w_i;
 
   std::cout << "Publishing the transformation..." << std::endl;
-  std::cout << "A_w_c: " << std::endl;
+  std::cout << "\n\nA_w_c = A_i_c * A_w_i" << std::endl;
   std::cout << A_w_c << std::endl;
 
   // rate at which the transformation is published

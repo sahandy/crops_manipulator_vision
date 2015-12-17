@@ -82,20 +82,20 @@ void HSVFilter::setHsvValues(crops_vision::Color color) {
       H_MIN_ = 0;
       H_MAX_ = 10;
 
-      S_MIN_ = 180;
+      S_MIN_ = 140;
       S_MAX_ = 255;
 
-      V_MIN_ = 190;
+      V_MIN_ = 70;
       V_MAX_ = 255;
       break;
     case crops_vision::MAGENTA_RED :
       H_MIN_ = 165;
       H_MAX_ = 179;
 
-      S_MIN_ = 190;
+      S_MIN_ = 140;
       S_MAX_ = 255;
 
-      V_MIN_ = 170;
+      V_MIN_ = 70;
       V_MAX_ = 255;
       break;
     case crops_vision::YELLOW :
@@ -112,10 +112,10 @@ void HSVFilter::setHsvValues(crops_vision::Color color) {
       H_MIN_ = 40;
       H_MAX_ = 70;
 
-      S_MIN_ = 140;
+      S_MIN_ = 40;
       S_MAX_ = 255;
 
-      V_MIN_ = 120;
+      V_MIN_ = 10;
       V_MAX_ = 255;
       break;
   }

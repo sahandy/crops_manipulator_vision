@@ -6,6 +6,7 @@
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
 #include <std_msgs/Bool.h>
+#include <std_msgs/Int32.h>
 #include <std_msgs/MultiArrayLayout.h>
 #include <std_msgs/MultiArrayDimension.h>
 #include <std_msgs/Int32MultiArray.h>
@@ -26,15 +27,19 @@ image_transport::Publisher hsv_pub_;
 ros::Subscriber hsvInteractive_sub_;
 // subscriber to receive HSV Values from GUI
 ros::Subscriber hsvValue_sub_;
-
-bool interactive_ = false;
+// subcriber to receive the color code for auto color filter
+ros::Subscriber hsvAuto_sub_;
 
 HSVFilter hsv_filter_;
+
+bool interactive_ = false;
+crops_vision::Color color_code_;
 
 // callbacks
 void image_cb_(const sensor_msgs::ImageConstPtr& msg);
 void set_interactive_(const std_msgs::Bool::ConstPtr& msg);
 void set_hsv_values_(const std_msgs::Int32MultiArray::ConstPtr& msg);
+void set_hsv_values_auto_(const std_msgs::Int32::ConstPtr& msg);
 
 
 int main (int argc, char **argv) {
@@ -46,8 +51,9 @@ int main (int argc, char **argv) {
   image_transport::ImageTransport it_(nh_);
   // Subscrive to input video feed and publish output video feed
   image_sub_ = it_.subscribe("/camera/rgb/image_raw", 1, image_cb_);
-  hsvInteractive_sub_ = nh_.subscribe("toggle_hsv_mode", 1, set_interactive_);
-  hsvValue_sub_ = nh_.subscribe("hsv_values", 10, set_hsv_values_);
+  hsvInteractive_sub_ = nh_.subscribe("/crops/vision/hsv_filter/toggle_mode", 1, set_interactive_);
+  hsvValue_sub_ = nh_.subscribe("/crops/vision/hsv_filter/values", 10, set_hsv_values_);
+  hsvAuto_sub_ = nh_.subscribe("/crops/vision/hsv_filter/auto_color_code", 1, set_hsv_values_auto_);
 
   hsv_pub_ = it_.advertise("crops/vision/image_filter/hsv_filtered", 1);
 
@@ -87,6 +93,33 @@ void set_hsv_values_(const std_msgs::Int32MultiArray::ConstPtr& msg) {
 }
 
 /**
+ * Callback that receives the message containing a color code
+ * values follow the order that is defined in crops_vision::Color
+ *         "0" RED
+ *         "1" GREEN
+ *         "2" BLUE
+ *         "3" YELLOW
+*/
+void set_hsv_values_auto_(const std_msgs::Int32::ConstPtr& msg) {
+  if(interactive_)
+    interactive_ = false;
+  switch (msg->data) {
+    case 0:
+      color_code_ = crops_vision::RED;
+      break;
+    case 1:
+      color_code_ = crops_vision::GREEN;
+      break;
+    case 2:
+      color_code_ = crops_vision::BLUE;
+      break;
+    case 3:
+      color_code_ = crops_vision::YELLOW;
+      break;
+  }
+}
+
+/**
  * Callback that receives the message containing the rgb iamge
 */
 void image_cb_(const sensor_msgs::ImageConstPtr& msg) {
@@ -98,12 +131,13 @@ void image_cb_(const sensor_msgs::ImageConstPtr& msg) {
     ROS_ERROR("cv_bridge exception: %s", e.what());
     return;
   }
-  // HSV filtering based on the input color
   hsv_filter_.setImage(cv_ptr->image);
-  cv::Mat thresholdImage = hsv_filter_.getFiltered();
-  // cv::Mat thresholdImage = hsv_filter_.getFilteredImage(crops_vision::YELLOW);
+  cv::Mat thresholdImage;
+  if(interactive_)
+    thresholdImage = hsv_filter_.getFiltered();
+  else
+    thresholdImage = hsv_filter_.getFilteredImage(color_code_);
   hsv_filter_.morphOps(thresholdImage);
-  // Output modified video stream
   cv_ptr->image = thresholdImage;
   cv_ptr->encoding = sensor_msgs::image_encodings::MONO8; // output is a single-channel image
   hsv_pub_.publish(cv_ptr->toImageMsg());

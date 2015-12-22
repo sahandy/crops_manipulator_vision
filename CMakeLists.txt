@@ -78,6 +78,8 @@ add_executable(transform_cloud_to_world src/PointCloudTransformer.cpp)
 add_executable(crop_workspace src/CropWorkspace.cpp)
 add_executable(segment src/Segmenter.cpp)
 add_executable(color_filter_3d src/ColorFilter3D.cpp)
+add_executable(stem_detector src/StemDetector.cpp)
+add_executable(clusterizer src/Clusterizer.cpp)
 add_executable(align src/AlignFruit.cpp)
 add_executable(interface ${INTERFACE_SOURCES})
 
@@ -88,6 +90,8 @@ target_link_libraries(transform_cloud_to_world ${catkin_LIBRARIES})
 target_link_libraries(crop_workspace ${catkin_LIBRARIES})
 target_link_libraries(segment ${catkin_LIBRARIES})
 target_link_libraries(color_filter_3d ${catkin_LIBRARIES})
+target_link_libraries(stem_detector ${catkin_LIBRARIES})
+target_link_libraries(clusterizer ${catkin_LIBRARIES})
 target_link_libraries(align ${catkin_LIBRARIES})
 target_link_libraries(interface
   ${catkin_LIBRARIES}

@@ -25,6 +25,8 @@ typedef typename PointCloudCT::ConstPtr PointCloudCTConstPtr;
  */
 typedef pcl::PointNormal PointNT;
 typedef pcl::PointCloud<PointNT> PointCloudNT;
+typedef typename PointCloudNT::Ptr PointCloudNTPtr;
+typedef typename PointCloudNT::ConstPtr PointCloudNTConstPtr;
 /*
  * Point Cloud Feature Type
  */

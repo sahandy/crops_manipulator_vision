@@ -1,6 +1,8 @@
 #include <ros/ros.h>
 #include <pcl_ros/point_cloud.h>
 #include <geometry_msgs/Vector3.h>
+#include <std_msgs/Bool.h>
+#include <std_msgs/Int32.h>
 
 #include <Eigen/Core>
 
@@ -18,9 +20,6 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <pwd.h>
-
-#include <std_msgs/Bool.h>
-#include <std_msgs/Int32.h>
 
 #include "types.h"
 

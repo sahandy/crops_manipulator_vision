@@ -65,6 +65,13 @@ set(INTERFACE_SOURCES
   ${QT_SOURCES}
   ${QT_MOC_HPP})
 
+set(DETECTOR_SOURCES
+  src/FruitDetector.cpp
+  src/ClusterExtractor.cpp
+  src/Aligner.cpp
+)
+
+
 # catkin_package(
 #   CATKIN_DEPENDS roscpp crops_manipulator_gui crops_manipulator_utils pcl_ros pcl_conversions tf cmake_modules sensor_msgs cv_bridge image_transport
 #   INCLUDE_DIRS include)
@@ -81,6 +88,7 @@ add_executable(color_filter_3d src/ColorFilter3D.cpp)
 add_executable(stem_detector src/StemDetector.cpp)
 add_executable(clusterizer src/Clusterizer.cpp)
 add_executable(align src/AlignFruit.cpp)
+add_executable(detector ${DETECTOR_SOURCES})
 add_executable(interface ${INTERFACE_SOURCES})
 
 # Specify libraries to link a lib or exec. target against
@@ -93,6 +101,7 @@ target_link_libraries(color_filter_3d ${catkin_LIBRARIES})
 target_link_libraries(stem_detector ${catkin_LIBRARIES})
 target_link_libraries(clusterizer ${catkin_LIBRARIES})
 target_link_libraries(align ${catkin_LIBRARIES})
+target_link_libraries(detector ${catkin_LIBRARIES})
 target_link_libraries(interface
   ${catkin_LIBRARIES}
   ${QT_LIBRARIES}

@@ -32,24 +32,25 @@ boost::shared_ptr<ros::NodeHandle> nh_;
 ros::Subscriber cloud_sub_;
 ros::Subscriber worker_sub_;
 ros::Publisher stem_model_pub_;
-ros::Publisher stem_x_pub_;
+ros::Publisher stem_pos_pub_;
 
 std::string in_cloud_topic_;
 double cylinder_radius_;
 int num_observations_;
-std::vector<float> stem_observations_;
+std::vector<float> stem_observations_x_;
+std::vector<float> stem_observations_y_;
 PointCloudTPtr stem_model_;
 bool stem_model_publisher_lock;
 // instance that holds the calculated X value for the stem
-std_msgs::Float32 msg_stem_x_;
+std_msgs::Float32MultiArray msg_stem_pos_;
 
 /*
  * functions
  */
-void get_stem_x_cb_(const std_msgs::Float32MultiArray::ConstPtr& msg);
+void get_stem_cb_(const std_msgs::Float32MultiArray::ConstPtr& msg);
 void subscribe();
 void unsubsribe();
-std_msgs::Float32 getOptimalStemX();
+void computeOptimalStemPos();
 void publishStemModel();
 void cloud_cb_(const PointCloudTConstPtr& cloud_msg);
 
@@ -69,9 +70,9 @@ int main(int argc, char** argv) {
   cylinder_radius_ = 0.04;
   stem_model_publisher_lock = true;
 
-  worker_sub_ = nh_->subscribe("/crops/vision/stem_detector/get_stem_position", 1, get_stem_x_cb_);
+  worker_sub_ = nh_->subscribe("/crops/vision/stem_detector/get_stem_position", 1, get_stem_cb_);
   stem_model_pub_ = nh_->advertise<PointCloudT> ("/crops/vision/stem_detector/stem_model", 1);
-  stem_x_pub_ = nh_->advertise<std_msgs::Float32> ("/crops/vision/stem_detector/stem_x", 1);
+  stem_pos_pub_ = nh_->advertise<std_msgs::Float32MultiArray> ("/crops/vision/stem_detector/stem_loc", 1);
 
   ros::Rate rate(30); // 30Hz
   while(ros::ok()) {
@@ -86,17 +87,17 @@ int main(int argc, char** argv) {
 
 /**
  * Callback that incorporates the incoming variables from the GUI and computes
- * the X position for the stem.
+ * the position for the stem.
  * Values included in the incoming message:
- *        0. whether to return the old value or compute a new one
- *              [0] return old X value
- *              [1] compute a new X value
+ *        0. whether to return old values or compute new ones
+ *              [0] return old values
+ *              [1] compute new values
  *        1. number of observations
  *        2. cylinder model's radius limit
  */
-void get_stem_x_cb_(const std_msgs::Float32MultiArray::ConstPtr& msg) {
+void get_stem_cb_(const std_msgs::Float32MultiArray::ConstPtr& msg) {
   if( msg->data[0] == 0 )
-    stem_x_pub_.publish(msg_stem_x_);
+    stem_pos_pub_.publish(msg_stem_pos_);
   else {
     num_observations_ = (int) msg->data[1];
     cylinder_radius_ = msg->data[0];
@@ -124,16 +125,15 @@ void publishStemModel() {
   stem_model_pub_.publish(stem_model_);
 }
 
-std_msgs::Float32 getOptimalStemX() {
-  std_msgs::Float32 msg;
+void computeOptimalStemPos() {
+  msg_stem_pos_.data.clear();
   double mean, std_dev;
-  pcl::getMeanStd(stem_observations_, mean, std_dev);
-  int sz = stem_observations_.size();
-  std::cout << "out of " << sz << " observations...\nMean: " << mean
-            << "\tStd_Dev: " << std_dev << std::endl;
-  msg.data = mean;
-
-  return msg;
+  // find the average for the X value
+  pcl::getMeanStd(stem_observations_x_, mean, std_dev);
+  msg_stem_pos_.data.push_back(mean);
+  // find the average for the Y value
+  pcl::getMeanStd(stem_observations_y_, mean, std_dev);
+  msg_stem_pos_.data.push_back(mean);
 }
 
 void cloud_cb_(const PointCloudTConstPtr& cloud_msg) {
@@ -169,20 +169,24 @@ void cloud_cb_(const PointCloudTConstPtr& cloud_msg) {
 
   Eigen::Vector4f centroid;
   pcl::compute3DCentroid(*cloud_cylinder, centroid);
-  
+
   const float centroid_x = centroid(0);
+  const float centroid_y = centroid(1);
   // FIXME put correct limits for the if-statement
   if(0.1 < centroid_x && centroid_x < 1.0)
-    stem_observations_.push_back(centroid_x);
-  if(stem_observations_.size() >= num_observations_) {
+    stem_observations_x_.push_back(centroid_x);
+  if(-1.0 < centroid_y && centroid_y < 1.0)
+    stem_observations_y_.push_back(centroid_y);
+  if(stem_observations_x_.size() >= num_observations_) {
     unsubsribe();
-    // compute the optimal stem position (x value)
-    msg_stem_x_ = getOptimalStemX();
-    stem_x_pub_.publish(msg_stem_x_);
+    // compute the optimal stem position
+    computeOptimalStemPos();
+    stem_pos_pub_.publish(msg_stem_pos_);
     stem_model_.reset(new PointCloudT);
     pcl::copyPointCloud(*cloud_cylinder, *stem_model_);
     // clear the observations container
-    stem_observations_.clear();
+    stem_observations_x_.clear();
+    stem_observations_y_.clear();
     // Unlock the model publisher
     stem_model_publisher_lock = false;
   }

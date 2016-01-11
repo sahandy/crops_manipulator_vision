@@ -1,105 +1,26 @@
 #include <iostream>
-#include <vector>
-#include <string>
-#include <unistd.h>
-#include <sys/types.h>
-#include <pwd.h>
 
 #include <ros/ros.h>
 #include <geometry_msgs/Vector3.h>
-#include <std_msgs/Bool.h>
 #include <std_msgs/Int32.h>
-#include <std_msgs/Float32MultiArray.h>
 #include <pcl_ros/point_cloud.h>
 
-#include <Eigen/Core>
 #include <Eigen/Geometry>
 
-#include <pcl/point_cloud.h>
 #include <pcl/common/time.h>
 #include <pcl/common/distances.h>
-#include <pcl/console/print.h>
-#include <pcl/ModelCoefficients.h>
 #include <pcl/point_types.h>
-#include <pcl/filters/extract_indices.h>
-#include <pcl/features/normal_3d.h>
-#include <pcl/kdtree/kdtree.h>
-#include <pcl/sample_consensus/method_types.h>
-#include <pcl/sample_consensus/model_types.h>
-#include <pcl/segmentation/sac_segmentation.h>
-#include <pcl/segmentation/extract_clusters.h>
 
-#include "ClusterExtractor.h"
-#include "Aligner.h"
-#include "types.h"
+#include "FruitDetector.h"
 
-typedef int fruit_id;
-
-class Fruit {
-public:
-  Fruit() : id_(0) {
-    PointT p(0.0f, 0.0f, 0.0f);
-    center_ = p;
-  }
-
-  Fruit(float* p) : id_(0) {
-    center_.x = p[0];
-    center_.y = p[2];
-    center_.z = p[1];
-  }
-
-  virtual ~Fruit() {}
-  fruit_id id() { return id_; }
-  PointT center() { return center_; }
-  void set_id(fruit_id id) { id_ = id; }
-  void set_center(PointT center) { center_ = center; }
-private:
-  fruit_id id_;
-  PointT center_;
-};
-
-class FruitDetector {
-public:
-  FruitDetector(std::string model_path)
-    : in_cloud_topic_("crops/vision/pointcloud_workspace"),
-      cluster_extractor_(new ClusterExtractor()),
-      aligner_(new Aligner(model_path)) {
-    nh_.reset(new ros::NodeHandle);
-    registerSubsribers();
-    registerPublishers();
-  }
-
-private:
-  void state_cb_(const std_msgs::Bool::ConstPtr& state_msg);
-  void cloud_cb_(const PointCloudTConstPtr& cloud_msg);
-  void align_params_cb_(const std_msgs::Float32MultiArray::ConstPtr& params);
-  void registerSubsribers();
-  void registerPublishers();
-  /**
-   * Checks if the rotation of aligned fruit around X and Y axes are small and
-   * reject those with large values.
-   * Normally a fruit hanging from a stem should be upright. Thus, it cannot
-   * have a large rotation around X and Y axes.
-   */
-  bool earlyRejectAlignment(const Eigen::Matrix3f& rotation);
-  /**
-   * Searches for any similar fruit that has already been detected by the
-   * algorithm, based on their center point. If the target center point is
-   * close 'enough' to any previsouly deteted fruit, its corresponding fruit_id
-   * is returned.
-   */
-  fruit_id searchFruit(float* center);
-  boost::shared_ptr<ros::NodeHandle> nh_;
-  ros::Subscriber cloud_sub_;
-  ros::Subscriber align_state_sub_;
-  ros::Subscriber align_params_sub_;
-  std::string in_cloud_topic_;
-  ros::Publisher fruit_center_pub_;
-  ros::Publisher aligned_model_pub_;
-  boost::shared_ptr<Aligner> aligner_;
-  boost::shared_ptr<ClusterExtractor> cluster_extractor_;
-  std::vector<boost::shared_ptr<Fruit> > fruits_;
-};
+FruitDetector::FruitDetector(std::string model_path)
+  : in_cloud_topic_("crops/vision/pointcloud_workspace"),
+    cluster_extractor_(new ClusterExtractor()),
+    aligner_(new Aligner(model_path)) {
+  nh_.reset(new ros::NodeHandle);
+  registerSubsribers();
+  registerPublishers();
+}
 
 void FruitDetector::registerSubsribers() {
   align_state_sub_ = nh_->subscribe("/crops/vision/alignment/state", 1,
@@ -192,32 +113,4 @@ void FruitDetector::cloud_cb_(const PointCloudTConstPtr& cloud_msg) {
       }
     }
   }
-}
-
-
-int main(int argc, char** argv) {
-  ros::init (argc, argv, "detector");
-
-  // load the sweet paprika model
-  // struct that helps finding the current home directory
-  struct passwd *pwd;
-  int id = 0;
-  if( (pwd = getpwuid(getuid())) == NULL ) {
-    ROS_FATAL("Error finding the home directory.");
-    return 0;
-  }
-  std::stringstream ss;
-  ss << pwd->pw_dir << "/.crops_manipulator/vision/model/";
-  std::cout << "Model located at: " << ss.str() << std::endl;
-
-  std::string full_path;
-  std::string file_name = "paprika_centered.pcd";
-  full_path.append(ss.str());
-  full_path.append(file_name);
-
-  FruitDetector fd(full_path);
-
-  ros::spin();
-
-  return 0;
 }

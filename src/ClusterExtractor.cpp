@@ -5,7 +5,7 @@
 ClusterExtractor::ClusterExtractor()
     : kd_tree_(new pcl::search::KdTree<PointT>()) {
     clusterizer_.setClusterTolerance(0.02); // 2cm
-    clusterizer_.setMinClusterSize(250);
+    clusterizer_.setMinClusterSize(150);
     clusterizer_.setMaxClusterSize(1900); // paprika half model: 3835/2 points
     clusterizer_.setSearchMethod(kd_tree_);
 }

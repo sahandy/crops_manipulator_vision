@@ -50,17 +50,25 @@ bool FruitDetector::earlyRejectAlignment(const Eigen::Matrix3f& rotation) {
   const float yaw = euler_angles[0];
   const float pitch = euler_angles[1];
   const float roll = euler_angles[2];
+  std::cout << "roll: " << roll << "\npitch: " << pitch << "\nyaw: " << yaw << std::endl;
   // 10 degrees = 0.17 radians
-  if(roll < 0.17 && pitch < 0.17)
-    return false;
-  return true;
+  // if(roll < 0.17 && pitch < 0.17)
+  //   return false;
+  return false;
 }
 
 fruit_id FruitDetector::searchFruit(float* center) {
+  printf("searchFruit(%f, %f, %f)\n", center[0], center[1], center[2]);
+  std::cout << "fruits_.size(): " << fruits_.size() << std::endl;
   for(int i=0; i<fruits_.size(); ++i) {
     PointT p(center[0], center[1], center[2]);
-    float dist = pcl::euclideanDistance(p, fruits_[i]->center());
-    if (dist < 0.05f)
+    std::cout << "fruits[" << i << "].center: "
+              << fruits_[i]->center().x << ", "
+              << fruits_[i]->center().y << ", "
+              << fruits_[i]->center().z << std::endl;
+    float const dist = pcl::euclideanDistance(p, fruits_[i]->center());
+    std::cout << "dist[" << i << "]: " << dist << std::endl;
+    if (dist < 0.10f)
       return i;
   }
   // didn't find the fruit, return -1 to indicate this is a new one
@@ -75,17 +83,17 @@ void FruitDetector::cloud_cb_(const PointCloudTConstPtr& cloud_msg) {
   cluster_extractor_->setInputCloud(input_cloud);
   cluster_extractor_->extract(clusters);
 
-  // early rejection?
+  // clustering: early rejection?
   // can be done using clusterizer parameters --> setMinClusterSize
 
   // alignment (for each cluster)
   size_t sz = clusters.size();
   std::cout << "found #" << sz << " clusters" << std::endl;
-  for(size_t i=0; i<sz; ++i) {
-    std::cout << "showing cluster #" << i << std::endl;
-    aligned_model_pub_.publish(*clusters[i]);
-    ros::Duration(2.0).sleep();
-  }
+  // for(size_t i=0; i<sz; ++i) {
+  //   std::cout << "showing cluster #" << i << std::endl;
+  //   aligned_model_pub_.publish(*clusters[i]);
+  //   ros::Duration(2.0).sleep();
+  // }
 
   for(size_t i=0; i<sz; ++i) {
     if( aligner_->align(clusters[i]) ) {
@@ -95,6 +103,7 @@ void FruitDetector::cloud_cb_(const PointCloudTConstPtr& cloud_msg) {
       float *center = new float[3];
       center = aligner_->getFruitCenter();
       fruit_id foundId = searchFruit(center);
+      std::cout << "foundId: " << foundId << std::endl;
       if(foundId == -1) {
         fruits_.push_back(boost::shared_ptr<Fruit>(new Fruit(center)));
         PointCloudNT::Ptr aligned_model (new PointCloudNT);

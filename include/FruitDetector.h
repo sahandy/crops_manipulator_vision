@@ -30,8 +30,8 @@ public:
    */
   Fruit(float* p) : id_(0) {
     center_.x = p[0];
-    center_.y = p[2];
-    center_.z = p[1];
+    center_.y = p[1];
+    center_.z = p[2];
   }
 
   virtual ~Fruit() {}

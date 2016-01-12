@@ -15,6 +15,12 @@
 #include "Aligner.h"
 #include "types.h"
 
+struct RPY {
+  float roll;
+  float pitch;
+  float yaw;
+};
+
 // typedef for convenience when dealing with different fruits
 typedef int fruit_id;
 
@@ -28,7 +34,7 @@ public:
   /**
    * Constructor with specified fruit center point
    */
-  Fruit(float* p) : id_(0) {
+  Fruit(float* p, Eigen::Matrix3f r) : id_(0), rotation_(r) {
     center_.x = p[0];
     center_.y = p[1];
     center_.z = p[2];
@@ -38,9 +44,29 @@ public:
   // Accessors
   fruit_id id() { return id_; }
   PointT center() { return center_; }
+  Eigen::Matrix3f rotation() { return rotation_; }
+  float roll() { return rpy_.roll; }
+  float pitch() { return rpy_.pitch; }
+  float yaw() { return rpy_.yaw; }
+  RPY get_RPY() { return rpy_; }
   // Setters
   void set_id(fruit_id id) { id_ = id; }
   void set_center(PointT center) { center_ = center; }
+  void set_rotation(Eigen::Matrix3f r) {
+    rotation_ = r;
+    const Eigen::Vector3f euler_angles = rotation_.eulerAngles(2, 1, 0);
+    // also set the RPY based on the rotation matrix
+    rpy_.yaw = euler_angles[0];
+    rpy_.pitch = euler_angles[1];
+    rpy_.roll = euler_angles[2];
+  }
+
+  void setRPY(float r, float p, float y) {
+    rpy_.roll = r;
+    rpy_.pitch = p;
+    rpy_.yaw = y;
+  }
+
 private:
   /**
    * Instance that holds a unique identifier for the fruit
@@ -50,6 +76,8 @@ private:
    * PCL Point type instance that holds the center point of the fruit
    */
   PointT center_;
+  Eigen::Matrix3f rotation_;
+  RPY rpy_;
 };
 
 class FruitDetector {
@@ -81,6 +109,8 @@ private:
    * have a large rotation around X and Y axes.
    */
   bool earlyRejectAlignment(const Eigen::Matrix3f& rotation);
+  bool enhanceAlignment(
+    const Eigen::Matrix3f& new_rotation, const boost::shared_ptr<Fruit>& f);
   /**
    * Searches for any similar fruit that has already been detected by the
    * algorithm, based on their center point. If the target center point is

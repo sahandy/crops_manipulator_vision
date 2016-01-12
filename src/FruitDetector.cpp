@@ -51,9 +51,25 @@ bool FruitDetector::earlyRejectAlignment(const Eigen::Matrix3f& rotation) {
   const float pitch = euler_angles[1];
   const float roll = euler_angles[2];
   std::cout << "roll: " << roll << "\npitch: " << pitch << "\nyaw: " << yaw << std::endl;
-  // 10 degrees = 0.17 radians
-  // if(roll < 0.17 && pitch < 0.17)
-  //   return false;
+  // 20 degrees = 0.35 radians
+  if(roll < 0.35 && pitch < 0.35)
+    return false;
+  return true;
+}
+
+bool FruitDetector::enhanceAlignment(
+  const Eigen::Matrix3f& new_rotation, const boost::shared_ptr<Fruit>& f) {
+  // get euler angles. (Z-Y-X) convention --> (Yaw, Pitch, Roll)
+  const Eigen::Vector3f euler_angles = new_rotation.eulerAngles(2, 1, 0);
+  const float new_yaw = euler_angles[0];
+  const float new_pitch = euler_angles[1];
+  const float new_roll = euler_angles[2];
+
+  const float old_roll = f->get_RPY().roll;
+  const float old_pitch = f->get_RPY().pitch;
+  // check if the new aligned model is less tilted
+  if (new_roll < old_roll && new_pitch < old_pitch)
+    return true;
   return false;
 }
 
@@ -105,7 +121,8 @@ void FruitDetector::cloud_cb_(const PointCloudTConstPtr& cloud_msg) {
       fruit_id foundId = searchFruit(center);
       std::cout << "foundId: " << foundId << std::endl;
       if(foundId == -1) {
-        fruits_.push_back(boost::shared_ptr<Fruit>(new Fruit(center)));
+        // This is a unique new fruit. Add it to the vector
+        fruits_.push_back(boost::shared_ptr<Fruit>(new Fruit(center, rot)));
         PointCloudNT::Ptr aligned_model (new PointCloudNT);
         aligner_->getAlignedModel(aligned_model);
         // create messages to pass the result
@@ -120,6 +137,12 @@ void FruitDetector::cloud_cb_(const PointCloudTConstPtr& cloud_msg) {
         // TODO remove the sleep time
         ros::Duration(2.0).sleep();
       }
+      else {
+        // the approximation is close to one of the previous fruits
+        if(!enhanceAlignment(rot, fruits_[i]))
+          continue;
+      }
+
     }
   }
 }

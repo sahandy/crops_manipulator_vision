@@ -2,6 +2,7 @@
 #include <pcl_ros/point_cloud.h>
 #include <std_msgs/Float32.h>
 #include <std_msgs/Float32MultiArray.h>
+#include <std_msgs/Empty.h>
 
 #include <string>
 #include <iostream>
@@ -33,6 +34,7 @@ ros::Subscriber cloud_sub_;
 ros::Subscriber worker_sub_;
 ros::Publisher stem_model_pub_;
 ros::Publisher stem_pos_pub_;
+ros::Publisher reset_crop_box_pub_;
 
 std::string in_cloud_topic_;
 double cylinder_radius_;
@@ -48,11 +50,12 @@ std_msgs::Float32MultiArray msg_stem_pos_;
  * functions
  */
 void get_stem_cb_(const std_msgs::Float32MultiArray::ConstPtr& msg);
+void cloud_cb_(const PointCloudTConstPtr& cloud_msg);
+void notifyResetCropBox();
 void subscribe();
 void unsubsribe();
 void computeOptimalStemPos();
 void publishStemModel();
-void cloud_cb_(const PointCloudTConstPtr& cloud_msg);
 
 /**
  * MAIN
@@ -71,8 +74,10 @@ int main(int argc, char** argv) {
   stem_model_publisher_lock = true;
 
   worker_sub_ = nh_->subscribe("/crops/vision/stem_detector/get_stem_position", 1, get_stem_cb_);
+
   stem_model_pub_ = nh_->advertise<PointCloudT> ("/crops/vision/stem_detector/stem_model", 1);
   stem_pos_pub_ = nh_->advertise<std_msgs::Float32MultiArray> ("/crops/vision/stem_detector/stem_loc", 1);
+  reset_crop_box_pub_ = nh_->advertise<std_msgs::Empty> ("/crops/vision/crop_box/reset", 1);
 
   ros::Rate rate(30); // 30Hz
   while(ros::ok()) {
@@ -103,6 +108,7 @@ void get_stem_cb_(const std_msgs::Float32MultiArray::ConstPtr& msg) {
     cylinder_radius_ = msg->data[0];
     stem_model_publisher_lock = true;
     std::cout << "computing stem position..." << std::endl;
+    notifyResetCropBox();
     subscribe();
   }
 }
@@ -134,6 +140,11 @@ void computeOptimalStemPos() {
   // find the average for the Y value
   pcl::getMeanStd(stem_observations_y_, mean, std_dev);
   msg_stem_pos_.data.push_back(mean);
+}
+
+void notifyResetCropBox() {
+  std_msgs::Empty msg;
+  reset_crop_box_pub_.publish(msg);
 }
 
 void cloud_cb_(const PointCloudTConstPtr& cloud_msg) {

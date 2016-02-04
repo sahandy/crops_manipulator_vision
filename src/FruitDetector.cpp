@@ -100,16 +100,11 @@ void FruitDetector::cloud_cb_(const PointCloudTConstPtr& cloud_msg) {
   cluster_extractor_->extract(clusters);
 
   // clustering: early rejection?
-  // can be done using clusterizer parameters --> setMinClusterSize
+  // already done using clusterizer parameters --> setMinClusterSize
 
   // alignment (for each cluster)
   size_t sz = clusters.size();
   std::cout << "found #" << sz << " clusters" << std::endl;
-  // for(size_t i=0; i<sz; ++i) {
-  //   std::cout << "showing cluster #" << i << std::endl;
-  //   aligned_model_pub_.publish(*clusters[i]);
-  //   ros::Duration(2.0).sleep();
-  // }
 
   for(size_t i=0; i<sz; ++i) {
     if( aligner_->align(clusters[i]) ) {

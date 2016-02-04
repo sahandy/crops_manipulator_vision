@@ -15,6 +15,9 @@
 #include "Aligner.h"
 #include "types.h"
 
+/**
+ * Struct that holds the Roll-Pitch-Yaw information
+ */
 struct RPY {
   float roll;
   float pitch;
@@ -76,6 +79,9 @@ private:
    * PCL Point type instance that holds the center point of the fruit
    */
   PointT center_;
+  /**
+   * Instance that holds the rotation matrix for this fruit
+   */
   Eigen::Matrix3f rotation_;
   RPY rpy_;
 };

@@ -102,6 +102,7 @@ bool read_tf_from_file(const std::string& file_path) {
   return true;
 }
 
+// MAIN
 int main(int argc, char** argv) {
 
   if(argc > 0) {

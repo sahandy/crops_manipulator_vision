@@ -23,9 +23,16 @@ bool im, cb;
 
 // Forward decleration
 void ignite();
+/**
+ * Callback that receives the incoming point cloud
+ */
 void cloud_cb_ (const PointCloudCTConstPtr& cloud_msg);
+/**
+ * Callback that receives the incoming color-filtered image
+ */
 void image_cb_ (const sensor_msgs::ImageConstPtr& msg);
 
+// Main
 int main (int argc, char** argv) {
   im = false;
   cb = false;
@@ -56,7 +63,9 @@ int main (int argc, char** argv) {
 void cloud_cb_ (const PointCloudCTConstPtr& cloud_msg) {
   cloud.reset(new PointCloudCT);
   pcl::copyPointCloud(*cloud_msg, *cloud);
+  // set the cloud trigger to true
   cb = true;
+  // perform 2d-3d correspondence extraction
   ignite();
 }
 
@@ -72,17 +81,19 @@ void image_cb_ (const sensor_msgs::ImageConstPtr& msg) {
     ROS_ERROR("cv_bridge exception: %s", e.what());
     return;
   }
+  // set the image trigger to true
   im = true;
 }
 
 void ignite() {
+  // If both triggers are active, find the 3d points corresponding to the
+  // hsv-filtered image.
   while(im && cb) {
-    // std::cout << "both TRUE" << std::endl;
     for(int rows=0; rows<threshold.rows; rows++) {
       for(int cols=0; cols<threshold.cols; cols++) {
         int value = threshold.data[threshold.channels()*(threshold.cols*rows+cols)+0];
+        // ONLY keep WHITE regions
         if(value!=255) {
-          // std::cout << "put zero" << std::endl;
           cloud->at(cols,rows).x = 0;
           cloud->at(cols,rows).y = 0;
           cloud->at(cols,rows).z = 0;

@@ -13,10 +13,21 @@
 
 #include "types.h"
 
+/**
+ * Class responsible for dividing a given point cloud into different clusters.
+ * Maintaining a cluster requires its size to fall into a certain range.
+ */
 class ClusterExtractor {
 public:
   ClusterExtractor();
+  /**
+   * Initializing the point cloud, clusterizer and the search tree
+   */
   void setInputCloud(const PointCloudTConstPtr input_cloud);
+  /**
+   * Function that extracts different clusters from the input point cloud and
+   * stores them in the given vector, as a set of point clouds.
+   */
   void extract(std::vector<PointCloudTPtr> &cloud_clusters);
 private:
   pcl::EuclideanClusterExtraction<PointT> clusterizer_;

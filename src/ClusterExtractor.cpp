@@ -28,8 +28,10 @@ void ClusterExtractor::extract(std::vector<PointCloudTPtr> &cloud_clusters) {
     PointCloudTPtr single_cluster(new PointCloudT);
     for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); ++pit)
       single_cluster->points.push_back (input_cloud_->points[*pit]);
+    // Prepare the rest of point cloud attributes before saving into vector
     single_cluster->width = single_cluster->points.size();
     single_cluster->height = 1;
+    // set the frame name to be recognized by RVIZ and other TF Listeners
     single_cluster->header.frame_id = "/Elem_0";
 
     cloud_clusters.push_back(single_cluster);

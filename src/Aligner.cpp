@@ -101,12 +101,12 @@ bool Aligner::align(const PointCloudTConstPtr& cloud_msg) {
   align.setSourceFeatures (model_features_);
   align.setInputTarget (target);
   align.setTargetFeatures (target_features_);
-  align.setMaximumIterations (align_params_.max_iter); // Number of RANSAC iterations
-  align.setNumberOfSamples (align_params_.num_samples); // Number of points to sample for generating/prerejecting a pose
-  align.setCorrespondenceRandomness (align_params_.corr_randomness); // Number of nearest features to use
-  align.setSimilarityThreshold (align_params_.sim_thresh); // Polygonal edge length similarity threshold
-  align.setMaxCorrespondenceDistance (align_params_.max_corr_dist * leaf_size_); // Inlier threshold
-  align.setInlierFraction (align_params_.inlier_fraction); // Required inlier fraction for accepting a pose hypothesis
+  align.setMaximumIterations (align_params_.max_iter);
+  align.setNumberOfSamples (align_params_.num_samples);
+  align.setCorrespondenceRandomness (align_params_.corr_randomness);
+  align.setSimilarityThreshold (align_params_.sim_thresh);
+  align.setMaxCorrespondenceDistance (align_params_.max_corr_dist * leaf_size_);
+  align.setInlierFraction (align_params_.inlier_fraction);
   {
     pcl::ScopeTime t("Alignment");
     model_aligned_.reset(new PointCloudNT);

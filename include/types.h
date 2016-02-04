@@ -3,7 +3,10 @@
 
 #include <pcl/point_types.h>
 #include <pcl/features/fpfh_omp.h>
-// Helper typedefs to make the implementation code cleaner
+
+// Helper typedefs to make the implementation code clean and consistent across
+// different classes
+
 /*
  * Simple Point Cloud Type
  */
@@ -11,7 +14,6 @@ typedef pcl::PointXYZ PointT;
 typedef pcl::PointCloud<PointT> PointCloudT;
 typedef typename PointCloudT::Ptr PointCloudTPtr;
 typedef typename PointCloudT::ConstPtr PointCloudTConstPtr;
-
 /*
  * Colored Point Cloud Type
  */
@@ -19,7 +21,6 @@ typedef pcl::PointXYZRGB PointCT;
 typedef pcl::PointCloud<PointCT> PointCloudCT;
 typedef typename PointCloudCT::Ptr PointCloudCTPtr;
 typedef typename PointCloudCT::ConstPtr PointCloudCTConstPtr;
-
 /*
  * Point Cloud Normal Type
  */

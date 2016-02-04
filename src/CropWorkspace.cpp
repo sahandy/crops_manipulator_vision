@@ -9,6 +9,12 @@
 
 #include "types.h"
 
+/**
+ * The node is responsible for trimming the point cloud to the size of the
+ * workspace. The workspace is trimmed to a default value until the stem is
+ * detected. It is then trimmed based on the location of the stem.
+ */
+
 // Global variables and constants
 ros::Publisher pub_;
 ros::Publisher req_stem_pub_;
@@ -18,11 +24,13 @@ ros::Subscriber reset_box_sub_;
 
 Eigen::Vector4f minPoint_, maxPoint_;
 
+// default value for stem radius
 const float stem_radius_ = 0.20f;
 
 // forward decleration
 /**
- * Callback that receives a pointcloud from the given ros topic
+ * Callback that receives a pointcloud from the given ros topic and performs
+ * the trimming. Uses PCL's CropBox to remove outliers.
  */
 void cloud_cb_(const PointCloudCTConstPtr& cloud_msg);
 /**

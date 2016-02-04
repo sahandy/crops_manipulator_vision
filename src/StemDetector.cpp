@@ -46,20 +46,40 @@ bool stem_model_publisher_lock;
 // instance that holds the calculated X value for the stem
 std_msgs::Float32MultiArray msg_stem_pos_;
 
-/*
- * functions
- */
+
+// functions
+/**
+* Callback that incorporates the incoming variables from the GUI and computes
+* the position for the stem.
+* Values included in the incoming message:
+*        0. whether to return old values or compute new ones
+*              [0] return old values
+*              [1] compute new values
+*        1. number of observations
+*        2. cylinder model's radius limit
+*/
 void get_stem_cb_(const std_msgs::Float32MultiArray::ConstPtr& msg);
+/**
+ * Callback that receives the incoming point cloud as input and performs the
+ * the stem detection.
+ */
 void cloud_cb_(const PointCloudTConstPtr& cloud_msg);
 void notifyResetCropBox();
+/**
+ * Subscribe to the Pointcloud topic
+ */
 void subscribe();
+/**
+ * Unsubsribe from the Pointcloud topic
+ */
 void unsubsribe();
+/**
+ * Function that computes an average value for the observed stem positions.
+ */
 void computeOptimalStemPos();
 void publishStemModel();
 
-/**
- * MAIN
- */
+// MAIN
 int main(int argc, char** argv) {
   ros::init (argc, argv, "stem_detector");
   nh_.reset(new ros::NodeHandle);
@@ -90,16 +110,6 @@ int main(int argc, char** argv) {
   return 0;
 }
 
-/**
- * Callback that incorporates the incoming variables from the GUI and computes
- * the position for the stem.
- * Values included in the incoming message:
- *        0. whether to return old values or compute new ones
- *              [0] return old values
- *              [1] compute new values
- *        1. number of observations
- *        2. cylinder model's radius limit
- */
 void get_stem_cb_(const std_msgs::Float32MultiArray::ConstPtr& msg) {
   if( msg->data[0] == 0 )
     stem_pos_pub_.publish(msg_stem_pos_);
@@ -113,16 +123,10 @@ void get_stem_cb_(const std_msgs::Float32MultiArray::ConstPtr& msg) {
   }
 }
 
-/**
- * Subscribe to the Pointcloud topic
- */
 void subscribe() {
   cloud_sub_ = nh_->subscribe(in_cloud_topic_, 1, cloud_cb_);
 }
 
-/**
- * Unsubsribe from the Pointcloud topic
- */
 void unsubsribe() {
   cloud_sub_.shutdown();
 }

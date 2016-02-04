@@ -9,6 +9,10 @@
 
 #include "FruitDetector.h"
 
+/**
+ * This node is responsible to run the FruitDetector class.
+ */
+
 int main(int argc, char** argv) {
   ros::init (argc, argv, "fruit_detector");
 

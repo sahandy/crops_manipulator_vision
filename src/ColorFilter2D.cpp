@@ -1,6 +1,3 @@
-//
-// Created by sahand on 23.11.15.
-//
 #include <ros/ros.h>
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
@@ -29,7 +26,7 @@ ros::Subscriber hsvInteractive_sub_;
 ros::Subscriber hsvValue_sub_;
 // subcriber to receive the color code for auto color filter
 ros::Subscriber hsvAuto_sub_;
-
+// instance of HSVFilter class
 HSVFilter hsv_filter_;
 
 bool interactive_ = false;
@@ -133,6 +130,8 @@ void image_cb_(const sensor_msgs::ImageConstPtr& msg) {
   }
   hsv_filter_.setImage(cv_ptr->image);
   cv::Mat thresholdImage;
+  // If in interactive mode, HSV values are modified in during runtime, thus
+  // updated constantly by set_hsv_values_
   if(interactive_)
     thresholdImage = hsv_filter_.getFiltered();
   else

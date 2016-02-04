@@ -46,24 +46,12 @@ set(QT_HEADERS
 QT4_WRAP_CPP(QT_MOC_HPP ${QT_HEADERS})
 include(${QT_USE_FILE})
 
-## Specify additional locations of header files
-## Your package locations should be listed before other locations
-# set(MY_INCLUDES
-#   include
-# )
-
 # now that setting Qt related stuff is done...
 # set include directories
 include_directories(
   ${catkin_INCLUDE_DIRS}
   ${QT_MY_INCLUDES}
 )
-
-# collect my source files
-set(INTERFACE_SOURCES
-  src/interface.cpp
-  ${QT_SOURCES}
-  ${QT_MOC_HPP})
 
 set(FRUIT_DETECTOR_SOURCES
   src/fruit_detector_main.cpp
@@ -83,27 +71,15 @@ add_executable(tf_cam_broadcaster src/TFBroadcaster.cpp)
 add_executable(color_filter_2d src/ColorFilter2D.cpp)
 add_executable(transform_cloud_to_world src/PointCloudTransformer.cpp)
 add_executable(crop_workspace src/CropWorkspace.cpp)
-add_executable(segment src/Segmenter.cpp)
 add_executable(color_filter_3d src/ColorFilter3D.cpp)
 add_executable(stem_detector src/StemDetector.cpp)
-add_executable(clusterizer src/Clusterizer.cpp)
-add_executable(align src/AlignFruit.cpp)
 add_executable(fruit_detector ${FRUIT_DETECTOR_SOURCES})
-add_executable(interface ${INTERFACE_SOURCES})
 
 # Specify libraries to link a lib or exec. target against
 target_link_libraries(tf_cam_broadcaster ${catkin_LIBRARIES})
 target_link_libraries(color_filter_2d ${catkin_LIBRARIES})
 target_link_libraries(transform_cloud_to_world ${catkin_LIBRARIES})
 target_link_libraries(crop_workspace ${catkin_LIBRARIES})
-target_link_libraries(segment ${catkin_LIBRARIES})
 target_link_libraries(color_filter_3d ${catkin_LIBRARIES})
 target_link_libraries(stem_detector ${catkin_LIBRARIES})
-target_link_libraries(clusterizer ${catkin_LIBRARIES})
-target_link_libraries(align ${catkin_LIBRARIES})
 target_link_libraries(fruit_detector ${catkin_LIBRARIES})
-target_link_libraries(interface
-  ${catkin_LIBRARIES}
-  ${QT_LIBRARIES}
-  ${QT_GUI_LIB}
-  ${QT_CORE_LIB})
